@@ -32,3 +32,20 @@ INSERT INTO `community` VALUES ('4', '4', '鸣潮', '启明星群岛的共鸣冒
 INSERT INTO `community` VALUES ('5', '5', '明日方舟', '罗德岛的干员们太靠谱！塔防+剧情深度拉满，每个干员的背景故事都让人又爱又心疼', '2026-01-06 16:20:00', '2026-01-06 16:20:00');
 INSERT INTO `community` VALUES ('6', '6', '碧蓝航线', '舰娘们的日常与海战超治愈！立绘精美+养成轻松，每次活动的剧情都甜到心坎里', '2026-01-06 17:50:00', '2026-01-06 17:50:00');
 INSERT INTO `community` VALUES ('7', '7', '崩坏3', '女武神们的终焉叙事太动人！动作战斗的打击感+情怀剧情，是陪伴无数玩家成长的青春回忆', '2026-01-06 19:10:00', '2026-01-06 19:10:00');
+
+DROP TABLE IF EXISTS `post`;
+CREATE TABLE `post` (
+                        `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                        `post_id` bigint(20) NOT NULL COMMENT '帖子id',
+                        `title` varchar(128) COLLATE utf8mb4_general_ci NOT NULL COMMENT '标题',
+                        `content` varchar(8192) COLLATE utf8mb4_general_ci NOT NULL COMMENT '内容',
+                        `author_id` bigint(20) NOT NULL COMMENT '作者的用户id',
+                        `community_id` bigint(20) NOT NULL COMMENT '所属社区',
+                        `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '帖子状态',
+                        `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                        `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                        PRIMARY KEY (`id`),
+                        UNIQUE KEY `idx_post_id` (`post_id`),
+                        KEY `idx_author_id` (`author_id`),
+                        KEY `idx_community_id` (`community_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
