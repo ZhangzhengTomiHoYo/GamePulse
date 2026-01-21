@@ -28,7 +28,10 @@ func Setup(mode string) *gin.Engine {
 
 		v1.POST("/post", controllers.CreatePostHandler)
 		v1.GET("/post/:id", controllers.GetPostDetailHandler)
-		v1.GET("/post", controllers.GetListDetailHandler)
+		v1.GET("/posts", controllers.GetListDetailHandler)
+		v1.GET("/posts2", controllers.GetListDetailHandler2)
+
+		v1.POST("/vote", controllers.PostVoteController)
 	}
 
 	r.NoRoute(func(c *gin.Context) {

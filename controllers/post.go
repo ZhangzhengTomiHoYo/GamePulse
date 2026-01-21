@@ -56,8 +56,8 @@ func GetPostDetailHandler(c *gin.Context) {
 	ResponseSuccess(c, data)
 }
 
-// GetListDetailHandler 获取帖子列表的接口
-func GetListDetailHandler(c *gin.Context) {
+// GetPageInfo 获取分页参数
+func GetPageInfo(c *gin.Context) (int64, int64) {
 	// 获取分页参数
 	pageStr := c.Query("page")
 	sizeStr := c.Query("size")
@@ -74,9 +74,48 @@ func GetListDetailHandler(c *gin.Context) {
 	if err != nil {
 		size = 10
 	}
+	return page, size
+}
 
+// GetListDetailHandler 获取帖子列表的接口
+func GetListDetailHandler(c *gin.Context) {
+	// 获取分页参数
+	page, size := GetPageInfo(c)
 	// 获取数据
 	data, err := logic.GetPostList(page, size)
+	if err != nil {
+		zap.L().Error("logic.GetPostList() failed", zap.Error(err))
+		ResponseError(c, CodeServeBusy)
+		return
+	}
+	ResponseSuccess(c, data)
+	// 返回响应
+}
+
+// GetListDetailHandler2 升级版获取帖子列表的接口
+// 根据前端传来的参数动态的获取帖子列表
+// 按创建时间排序 或者 按照分数排序
+// 1. 获取参数
+// 2. 去redis查询id列表
+// 3. 根据id去数据库查询帖子详细信息
+// 4.
+func GetListDetailHandler2(c *gin.Context) {
+	// GET请求参数: /api/v1/post2?page=1&size-10&order=time  (query string 参数)
+	// 获取分页参数 gin框架运用反射取出来
+	// 注意！请求中有json的是shouldbindjson 此处用的是shouldbindquery
+	p := &models.ParamPostList{
+		Page:  1, // 应该写到配置文件中，此处为方便才
+		Size:  10,
+		Order: models.OrderTime,
+	}
+	if err := c.ShouldBindQuery(p); err != nil {
+		zap.L().Error("GetListDetailHandler(p) with invalid param", zap.Error(err))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
+
+	// 获取数据
+	data, err := logic.GetPostList2(p)
 	if err != nil {
 		zap.L().Error("logic.GetPostList() failed", zap.Error(err))
 		ResponseError(c, CodeServeBusy)
