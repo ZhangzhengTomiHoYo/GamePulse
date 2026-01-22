@@ -115,12 +115,42 @@ func GetListDetailHandler2(c *gin.Context) {
 	}
 
 	// 获取数据
-	data, err := logic.GetPostList2(p)
+	data, err := logic.GetPostListNew(p) // 更新：合二为一
 	if err != nil {
-		zap.L().Error("logic.GetPostList() failed", zap.Error(err))
+		zap.L().Error("logic.GetPostListNew() failed", zap.Error(err))
 		ResponseError(c, CodeServeBusy)
 		return
 	}
 	ResponseSuccess(c, data)
 	// 返回响应
 }
+
+//
+//// 根据社区去查询帖子列表
+//func GetCommunityPostListHandler(c *gin.Context) {
+//	// GET请求参数: /api/v1/post2?page=1&size-10&order=time  (query string 参数)
+//	// 获取分页参数 gin框架运用反射取出来
+//	// 注意！请求中有json的是shouldbindjson 此处用的是shouldbindquery
+//	p := &models.ParamCommunityPostList{
+//		ParamPostList: &models.ParamPostList{
+//			Page:  1,
+//			Size:  10,
+//			Order: models.OrderTime,
+//		},
+//	}
+//	if err := c.ShouldBindQuery(p); err != nil {
+//		zap.L().Error("GetListDetailHandler(p) with invalid param", zap.Error(err))
+//		ResponseError(c, CodeInvalidParam)
+//		return
+//	}
+//
+//	// 获取数据
+//	data, err := logic.GetCommunityPostList(p)
+//	if err != nil {
+//		zap.L().Error("logic.GetPostList() failed", zap.Error(err))
+//		ResponseError(c, CodeServeBusy)
+//		return
+//	}
+//	ResponseSuccess(c, data)
+//	// 返回响应
+//}

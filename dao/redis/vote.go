@@ -3,6 +3,7 @@ package redis
 import (
 	"errors"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -51,7 +52,7 @@ var (
 	ErrVoteRepeat     = errors.New("禁止重复投票")
 )
 
-func CreatePost(postID int64) error {
+func CreatePost(postID, communityID int64) error {
 	// 时间和分数，要同时成功
 	pipeline := client.TxPipeline() // 放到一个事务里面去
 	// 帖子时间
@@ -64,6 +65,9 @@ func CreatePost(postID int64) error {
 		Score:  float64(time.Now().Unix()),
 		Member: postID,
 	})
+	// 更新：把帖子id加到社区的set里
+	cKey := getRedisKey(KeyCommunitySetPF + strconv.FormatInt(int64(communityID), 10))
+	pipeline.SAdd(cKey, postID)
 	_, err := pipeline.Exec() // 事务 要么全执行 要么全不执行
 
 	// 关键3：添加日志，排查写入失败原因
