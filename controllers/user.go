@@ -12,6 +12,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// SignUpHandler 用户注册接口
+// @Summary 用户注册接口
+// @Description 用户注册接口
+// @Tags 用户相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param request body models.ParaSignUp true "注册参数"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponseData "{"code":1000, "msg":"success", "data":null}"
+// @Router /signup [post]
 func SignUpHandler(c *gin.Context) {
 	// 1. 获取参数和参数校验
 	// 使用new 而不是 var 返回指针，方便后续函数编写
@@ -62,6 +72,16 @@ func SignUpHandler(c *gin.Context) {
 	ResponseSuccess(c, nil)
 }
 
+// LoginHandler 用户登录接口
+// @Summary 用户登录接口
+// @Description 用户登录接口
+// @Tags 用户相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param object body models.ParaLogin true "登录参数"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponseData
+// @Router /login [post]
 func LoginHandler(c *gin.Context) {
 	// 1.获取请求参数及参数校验
 	p := new(models.ParaLogin)

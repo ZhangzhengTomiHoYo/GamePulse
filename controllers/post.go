@@ -9,6 +9,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// CreatePostHandler 创建帖子接口
+// @Summary 创建帖子接口
+// @Description 创建帖子接口
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param object body models.Post true "帖子参数"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponseData
+// @Router /post [post]
 func CreatePostHandler(c *gin.Context) {
 	// 1. 获取参数及参数的校验
 	p := new(models.Post)
@@ -36,6 +46,16 @@ func CreatePostHandler(c *gin.Context) {
 	ResponseSuccess(c, nil)
 }
 
+// GetPostDetailHandler 获取单个帖子详情接口
+// @Summary 获取单个帖子详情接口
+// @Description 获取单个帖子详情接口
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param id path int64 true "帖子id"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostData
+// @Router /post/{id} [get]
 func GetPostDetailHandler(c *gin.Context) {
 	// 1. 获取参数（从URL中获取帖子的id）
 	pidStr := c.Param("id")
@@ -77,7 +97,18 @@ func GetPageInfo(c *gin.Context) (int64, int64) {
 	return page, size
 }
 
-// GetListDetailHandler 获取帖子列表的接口
+// GetListDetailHandler 获取一页帖子详情的接口(已弃用)
+// @Summary 获取一页帖子详情的接口(已弃用)
+// @Description 获取一页帖子详情的接口(已弃用)
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param page query int true "页码"
+// @Param size query int true "每页大小"
+// @Param order query string true "排序方式"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponsePostList
+// @Router /posts [get]
 func GetListDetailHandler(c *gin.Context) {
 	// 获取分页参数
 	page, size := GetPageInfo(c)
@@ -92,6 +123,7 @@ func GetListDetailHandler(c *gin.Context) {
 	// 返回响应
 }
 
+// 老的注释，供参考
 // GetListDetailHandler2 升级版获取帖子列表的接口
 // 根据前端传来的参数动态的获取帖子列表
 // 按创建时间排序 或者 按照分数排序
@@ -137,10 +169,10 @@ func GetListDetailHandler2(c *gin.Context) {
 	// 返回响应
 }
 
-//
+// 老的函数，已弃用，供参考
 //// 根据社区去查询帖子列表
 //func GetCommunityPostListHandler(c *gin.Context) {
-//	// GET请求参数: /api/v1/post2?page=1&size-10&order=time  (query string 参数)
+//	// GET请求参数: /api/v1/post2?page=1&size=10&order=time  (query string 参数)
 //	// 获取分页参数 gin框架运用反射取出来
 //	// 注意！请求中有json的是shouldbindjson 此处用的是shouldbindquery
 //	p := &models.ParamCommunityPostList{
