@@ -144,7 +144,7 @@ func GetListDetailHandler(c *gin.Context) {
 // @Success 200 {object} _ResponsePostList
 // @Router /posts2 [get]
 func GetListDetailHandler2(c *gin.Context) {
-	// GET请求参数: /api/v1/post2?page=1&size-10&order=time  (query string 参数)
+	// GET请求参数: /api/v1/post2?page=1&size=10&order=time  (query string 参数)
 	// 获取分页参数 gin框架运用反射取出来
 	// 注意！请求中有json的是shouldbindjson 此处用的是shouldbindquery
 	p := &models.ParamPostList{
@@ -152,6 +152,7 @@ func GetListDetailHandler2(c *gin.Context) {
 		Size:  10,
 		Order: models.OrderTime,
 	}
+	// 注意！！！ 此处绑定query
 	if err := c.ShouldBindQuery(p); err != nil {
 		zap.L().Error("GetListDetailHandler(p) with invalid param", zap.Error(err))
 		ResponseError(c, CodeInvalidParam)
