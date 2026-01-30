@@ -23,6 +23,13 @@ func Setup(mode string) *gin.Engine {
 	}
 	r := gin.New()
 	r.Use(logger.GinLogger(), logger.GinRecovery(true), middlewares.RateLimitMiddleware(time.Second, 100))
+
+	r.LoadHTMLFiles("./templates/index.html")
+	r.Static("/assets", "./assets")
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil) // 单页面应用，通过JS去改变页面上的内容;展示数据从后端来
+	})
+
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
