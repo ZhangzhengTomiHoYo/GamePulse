@@ -13,6 +13,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	gs "github.com/swaggo/gin-swagger"
 
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +22,7 @@ func Setup(mode string) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
-	r.Use(logger.GinLogger(), logger.GinRecovery(true), middlewares.RateLimitMiddleware(3*time.Second, 1))
+	r.Use(logger.GinLogger(), logger.GinRecovery(true), middlewares.RateLimitMiddleware(time.Second, 100))
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
@@ -43,7 +44,7 @@ func Setup(mode string) *gin.Engine {
 
 		v1.POST("/vote", controllers.PostVoteController)
 	}
-
+	pprof.Register(r) // 注册pprof相关路由
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"msg": "no Route!!! 404",
