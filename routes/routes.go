@@ -5,6 +5,7 @@ import (
 	"bluebell/logger"
 	"bluebell/middlewares"
 	"net/http"
+	"time"
 
 	_ "bluebell/docs" // 千万不要忘了导入把你上一步生成的docs
 
@@ -20,9 +21,11 @@ func Setup(mode string) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
-	r.Use(logger.GinLogger(), logger.GinRecovery(true))
+	r.Use(logger.GinLogger(), logger.GinRecovery(true), middlewares.RateLimitMiddleware(3*time.Second, 1))
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
-
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
 	v1 := r.Group("/api/v1")
 	v1.POST("/signup", controllers.SignUpHandler)
 	v1.POST("/login", controllers.LoginHandler)
