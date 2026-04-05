@@ -1,0 +1,25 @@
+services:
+  mysql:
+    image: "mysql:8.0"
+    ports:
+      - "3306:3306"
+    command: "--init-file /data/application/init.sql"
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+    volumes:
+      - ./init.sql:/data/application/init.sql
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+  bubble_app:
+    build: .
+    # -----------------------------------------------------------
+    # 修正：使用数组格式 (方括号)，确保 wait-for.sh 能接收到参数
+    # -----------------------------------------------------------
+    command: ["/wait-for.sh", "mysql:3306", "redis:6379", "--", "/bluebell_app", "./conf/config.yaml"]
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "8888:8080"
