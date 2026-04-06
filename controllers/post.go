@@ -10,8 +10,36 @@ import (
 	"go.uber.org/zap"
 )
 
+// UploadImageHandler 图片上传接口
+// @Summary 图片上传接口
+// @Description 上传单张图片到MinIO并返回公网URL
+// @Tags 帖子相关接口
+// @Accept multipart/form-data
+// @Produce application/json
+// @Param image formData file true "图片文件"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponseData
+// @Router /upload [post]
 func UploadImageHandler(c *gin.Context) {
+	// 1. 仅做最基础的 HTTP 参数提取
+	fileHeader, err := c.FormFile("image")
+	if err != nil {
+		zap.L().Error("c.FormFile failed", zap.Error(err))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
 
+	// 2. 核心业务逻辑移交给 Logic 层处理，只传 fileHeader
+	imageURL, err := logic.UploadImage(fileHeader)
+	if err != nil {
+		zap.L().Error("logic.UploadImage failed", zap.Error(err))
+		// 这里可以根据 err 细化返回码，比如文件类型不支持
+		ResponseError(c, CodeServeBusy)
+		return
+	}
+
+	// 3. 返回最终链接
+	ResponseSuccess(c, imageURL)
 }
 
 // DeletePostHandler 删除帖子接口

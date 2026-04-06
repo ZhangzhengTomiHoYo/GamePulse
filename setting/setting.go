@@ -21,6 +21,16 @@ type AppConfig struct {
 	*LogConfig      `mapstructure:"log"`
 	*PostgresConfig `mapstructure:"postgres"`
 	*RedisConfig    `mapstructure:"redis"`
+	*MinIOConfig    `mapstructure:"minio"` // 【新增】MinIO 配置
+}
+
+// 2. 在文件底部定义 MinIOConfig 结构体
+type MinIOConfig struct {
+	Endpoint   string `mapstructure:"endpoint"`
+	AccessKey  string `mapstructure:"access_key"`
+	SecretKey  string `mapstructure:"secret_key"`
+	UseSSL     bool   `mapstructure:"use_ssl"`
+	BucketName string `mapstructure:"bucket_name"`
 }
 
 type LogConfig struct {

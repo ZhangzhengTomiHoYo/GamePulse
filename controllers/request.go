@@ -2,25 +2,28 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
 const CtxUserIDKey = "userID"
 
-var ErrorUserNotLogin = errors.New("用户未登录")
+var ErrorUserNotLogin = errors.New("鐢ㄦ埛鏈櫥褰?")
 
-// getCurrentUserID 获取当前登录的用户ID
+// getCurrentUserID gets the authenticated user ID from gin.Context.
 func getCurrentUserID(c *gin.Context) (userID int64, err error) {
 	uid, ok := c.Get(CtxUserIDKey)
 	if !ok {
-		err = ErrorUserNotLogin
-		return
+		return 0, ErrorUserNotLogin
 	}
-	userID, ok = uid.(int64)
-	if !ok {
-		err = ErrorUserNotLogin
-		return
+
+	switch v := uid.(type) {
+	case int64:
+		return v, nil
+	case int:
+		return int64(v), nil
+	default:
+		return 0, fmt.Errorf("invalid user id type: %T", uid)
 	}
-	return
 }

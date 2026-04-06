@@ -1,15 +1,51 @@
 package logic
 
 import (
+	"bluebell/dao/minio"
 	"bluebell/dao/pgsql"
 	"bluebell/dao/redis"
 	"bluebell/models"
 	"bluebell/pkg/snowflake"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"mime/multipart"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"go.uber.org/zap"
 )
+
+// UploadImage 处理图片上传业务逻辑
+func UploadImage(fileHeader *multipart.FileHeader) (string, error) {
+	// 1. 提取后缀并统一转小写，防止绕过 (比如 .JPG)
+	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+
+	// 2. 严格的业务白名单校验 (已加入 .avif)
+	if ext != ".jpg" && ext != ".png" && ext != ".jpeg" && ext != ".gif" && ext != ".webp" && ext != ".avif" {
+		return "", errors.New("unsupported file extension: " + ext)
+	}
+
+	// 3. 业务命名规则：雪花算法重命名
+	imageID := snowflake.GenID()
+	objectName := fmt.Sprintf("%d%s", imageID, ext)
+
+	// 4. 打开文件准备底层读取
+	fileObj, err := fileHeader.Open()
+	if err != nil {
+		return "", fmt.Errorf("file open failed: %w", err)
+	}
+	defer fileObj.Close()
+
+	// 5. 移交给真正的底层 DAO 层（MinIO）
+	imageURL, err := minio.UploadFile(objectName, fileObj, fileHeader.Size, fileHeader.Header.Get("Content-Type"))
+	if err != nil {
+		return "", fmt.Errorf("dao minio upload failed: %w", err)
+	}
+
+	return imageURL, nil
+}
 
 // DeletePost 删除帖子逻辑
 func DeletePost(postID, authorID int64) error {

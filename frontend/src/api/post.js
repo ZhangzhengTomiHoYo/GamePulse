@@ -15,10 +15,8 @@ export const uploadImage = (file) => {
   formData.append('image', file)
 
   return axios.post('/api/v1/upload', formData, {
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'multipart/form-data'
-    }
+    // 只需要带上 Token 即可，千万别手动写 Content-Type
+    headers: getAuthHeaders() 
   })
 }
 

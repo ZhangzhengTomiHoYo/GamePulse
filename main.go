@@ -2,6 +2,7 @@ package main
 
 import (
 	"bluebell/controllers"
+	"bluebell/dao/minio"
 	"bluebell/dao/pgsql"
 	"bluebell/dao/redis"
 	"bluebell/logger"
@@ -64,6 +65,14 @@ func main() {
 		return
 	}
 	defer redis.Close()
+
+	// 【新增】：初始化 MinIO
+	if err := minio.Init(setting.Conf.MinIOConfig); err != nil {
+		fmt.Printf("init minio failed, err:%v\n", err)
+		zap.L().Fatal("init minio failed", zap.Error(err))
+		return
+	}
+	// minio是无状态HTTP客户端 不需要defer关闭连接
 
 	// 雪花算法生成id
 	if err := snowflake.Init(setting.Conf.StartTime, setting.Conf.MachineID); err != nil {
