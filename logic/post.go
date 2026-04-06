@@ -145,6 +145,7 @@ func GetPostByID(pid int64) (data *models.ApiPostDetail, err error) {
 	data = &models.ApiPostDetail{
 		AuthorName:      user.Username,
 		VoteNum:         nums[0],
+		ImageURLs:       imageURLs,
 		Post:            post,
 		CommunityDetail: community,
 	}
@@ -187,6 +188,7 @@ func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
 
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
+			ImageURLs:       imageURLs,
 			Post:            post,
 			CommunityDetail: community,
 		}
@@ -250,6 +252,7 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
 			VoteNum:         voteData[idx],
+			ImageURLs:       imageURLs,
 			Post:            post,
 			CommunityDetail: community,
 		}
@@ -312,6 +315,7 @@ func GetCommunityPostList(p *models.ParamPostList) (data []*models.ApiPostDetail
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
 			VoteNum:         voteData[idx],
+			ImageURLs:       imageURLs,
 			Post:            post,
 			CommunityDetail: community,
 		}

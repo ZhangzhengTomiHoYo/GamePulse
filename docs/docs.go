@@ -11,9 +11,9 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "这里写联系人信息",
+            "name": "张政",
             "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
+            "email": "1296775258@qq.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -70,7 +70,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "创建帖子接口",
+                "description": "创建带图片的帖子接口",
                 "consumes": [
                     "application/json"
                 ],
@@ -88,7 +88,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Post"
+                            "$ref": "#/definitions/models.ParamCreatePost"
                         }
                     }
                 ],
@@ -135,6 +135,49 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/controllers._ResponsePostData"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "作者删除自己的帖子（软删除并清理Redis）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子相关接口"
+                ],
+                "summary": "删除帖子接口",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer 用户令牌",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "帖子id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers._ResponseData"
                         }
                     }
                 }
@@ -293,6 +336,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/upload": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "上传单张图片到MinIO并返回公网URL",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子相关接口"
+                ],
+                "summary": "图片上传接口",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "图片文件",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers._ResponseData"
+                        }
+                    }
+                }
+            }
+        },
         "/vote": {
             "post": {
                 "security": [
@@ -344,7 +424,9 @@ const docTemplate = `{
                 1004,
                 1005,
                 1006,
-                1007
+                1007,
+                1008,
+                1009
             ],
             "x-enum-varnames": [
                 "CodeSuccess",
@@ -354,7 +436,9 @@ const docTemplate = `{
                 "CodeInvalidPassword",
                 "CodeServeBusy",
                 "CodeInvalidToken",
-                "CodeNeedLogin"
+                "CodeNeedLogin",
+                "CodePostNotExist",
+                "CodeNoPermission"
             ]
         },
         "controllers._ResponseData": {
@@ -435,7 +519,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "author_id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0"
                 },
                 "author_name": {
                     "type": "string"
@@ -449,7 +534,8 @@ const docTemplate = `{
                     ]
                 },
                 "community_id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0"
                 },
                 "content": {
                     "type": "string"
@@ -458,7 +544,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0"
+                },
+                "image_url": {
+                    "description": "新增：对应 PG 里的 VARCHAR(1024)，存 JSON 字符串",
+                    "type": "string"
+                },
+                "image_urls": {
+                    "description": "新增：给前端直接返回反序列化好的数组，方便 v-for 渲染图片",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "status": {
                     "type": "integer"
@@ -479,7 +577,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0"
                 },
                 "introduction": {
                     "type": "string"
@@ -545,7 +644,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Post": {
+        "models.ParamCreatePost": {
             "type": "object",
             "required": [
                 "community_id",
@@ -553,23 +652,19 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
-                "author_id": {
-                    "type": "integer"
-                },
                 "community_id": {
-                    "type": "integer"
+                    "type": "string",
+                    "example": "0"
                 },
                 "content": {
                     "type": "string"
                 },
-                "create_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
+                "image_urls": {
+                    "description": "新增：接收前端传来的图片链接数组",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "title": {
                     "type": "string"
@@ -585,8 +680,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Bluebell_Zhang_Zheng",
-	Description:      "张政的第一个完整的golang项目",
+	Title:            "GamePulse",
+	Description:      "游戏脉络（游脉）社区，专注游戏社区舆情分析",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

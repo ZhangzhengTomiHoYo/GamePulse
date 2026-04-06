@@ -51,6 +51,8 @@ definitions:
     - 1005
     - 1006
     - 1007
+    - 1008
+    - 1009
     format: int64
     type: integer
     x-enum-varnames:
@@ -62,10 +64,13 @@ definitions:
     - CodeServeBusy
     - CodeInvalidToken
     - CodeNeedLogin
+    - CodePostNotExist
+    - CodeNoPermission
   models.ApiPostDetail:
     properties:
       author_id:
-        type: integer
+        example: "0"
+        type: string
       author_name:
         type: string
       community:
@@ -73,13 +78,23 @@ definitions:
         - $ref: '#/definitions/models.CommunityDetail'
         description: 嵌入社区信息
       community_id:
-        type: integer
+        example: "0"
+        type: string
       content:
         type: string
       create_time:
         type: string
       id:
-        type: integer
+        example: "0"
+        type: string
+      image_url:
+        description: 新增：对应 PG 里的 VARCHAR(1024)，存 JSON 字符串
+        type: string
+      image_urls:
+        description: 新增：给前端直接返回反序列化好的数组，方便 v-for 渲染图片
+        items:
+          type: string
+        type: array
       status:
         type: integer
       title:
@@ -97,7 +112,8 @@ definitions:
         description: 连接mysql时要加上parseTime=true
         type: string
       id:
-        type: integer
+        example: "0"
+        type: string
       introduction:
         type: string
       name:
@@ -142,20 +158,18 @@ definitions:
     required:
     - post_id
     type: object
-  models.Post:
+  models.ParamCreatePost:
     properties:
-      author_id:
-        type: integer
       community_id:
-        type: integer
+        example: "0"
+        type: string
       content:
         type: string
-      create_time:
-        type: string
-      id:
-        type: integer
-      status:
-        type: integer
+      image_urls:
+        description: 新增：接收前端传来的图片链接数组
+        items:
+          type: string
+        type: array
       title:
         type: string
     required:
@@ -166,15 +180,15 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@swagger.io
-    name: 这里写联系人信息
+    email: 1296775258@qq.com
+    name: 张政
     url: http://www.swagger.io/support
-  description: 张政的第一个完整的golang项目
+  description: 游戏脉络（游脉）社区，专注游戏社区舆情分析
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: Bluebell_Zhang_Zheng
+  title: GamePulse
   version: "1.0"
 paths:
   /login:
@@ -205,14 +219,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: 创建帖子接口
+      description: 创建带图片的帖子接口
       parameters:
       - description: 帖子参数
         in: body
         name: object
         required: true
         schema:
-          $ref: '#/definitions/models.Post'
+          $ref: '#/definitions/models.ParamCreatePost'
       produces:
       - application/json
       responses:
@@ -226,6 +240,34 @@ paths:
       tags:
       - 帖子相关接口
   /post/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 作者删除自己的帖子（软删除并清理Redis）
+      parameters:
+      - description: Bearer 用户令牌
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 帖子id
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers._ResponseData'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除帖子接口
+      tags:
+      - 帖子相关接口
     get:
       consumes:
       - application/json
@@ -347,6 +389,29 @@ paths:
       summary: 用户注册接口
       tags:
       - 用户相关接口
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传单张图片到MinIO并返回公网URL
+      parameters:
+      - description: 图片文件
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers._ResponseData'
+      security:
+      - ApiKeyAuth: []
+      summary: 图片上传接口
+      tags:
+      - 帖子相关接口
   /vote:
     post:
       consumes:

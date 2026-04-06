@@ -44,14 +44,14 @@ func CreatePost(p *models.Post) error {
 // GetPostByID 根据id查询单个帖子数据
 func GetPostByID(pid int64) (post *models.Post, err error) {
 	post = new(models.Post)
-	sqlStr := `select post_id, title, content, author_id, community_id, create_time from post where post_id = $1`
+	sqlStr := `select post_id, title, content, author_id, community_id, image_url, create_time from post where post_id = $1`
 	err = db.Get(post, sqlStr, pid)
 	return post, err
 }
 
 // GetPostList 查询帖子列表函数
 func GetPostList(page, size int64) (posts []*models.Post, err error) {
-	sqlStr := `select post_id, title, content, author_id, community_id, create_time from post order by create_time desc limit $1 offset $2`
+	sqlStr := `select post_id, title, content, author_id, community_id, image_url, create_time from post order by create_time desc limit $1 offset $2`
 	posts = make([]*models.Post, 0, 2)
 	err = db.Select(&posts, sqlStr, size, (page-1)*size)
 	return posts, err
@@ -68,7 +68,7 @@ func GetPostListByIDs(ids []string) (postList []*models.Post, err error) {
 		idValues = append(idValues, v)
 	}
 
-	sqlStr := `select post_id, title, content, author_id, community_id, create_time
+	sqlStr := `select post_id, title, content, author_id, community_id, image_url, create_time
 		from post
 		where post_id = any($1::bigint[])
 		order by array_position($1::bigint[], post_id)`

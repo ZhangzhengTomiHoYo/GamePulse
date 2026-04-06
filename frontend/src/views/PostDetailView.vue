@@ -30,7 +30,18 @@
       <div class="content">
         {{ post.content }}
       </div>
-
+      <div class="detail-images" v-if="post.image_urls && post.image_urls.length > 0">
+        <el-image
+          v-for="(url, index) in post.image_urls"
+          :key="index"
+          :src="url"
+          class="detail-image-item"
+          fit="scale-down"
+          :preview-src-list="post.image_urls"
+          :initial-index="index"
+          preview-teleported
+        />
+    </div>
       <div class="detail-footer">
         <div class="vote-actions">
           <el-button
@@ -76,6 +87,29 @@ const canDeletePost = computed(() => {
   if (!post.value || !currentUserId) return false
   return String(post.value.author_id) === String(currentUserId)
 })
+
+const normalizeImageUrls = (postData) => {
+  if (!postData) return
+
+  const rawValue = postData.image_urls ?? postData.image_url ?? postData.imageURLs
+
+  if (Array.isArray(rawValue)) {
+    postData.image_urls = rawValue.filter(Boolean)
+    return
+  }
+
+  if (typeof rawValue === 'string' && rawValue.trim()) {
+    try {
+      const parsed = JSON.parse(rawValue)
+      postData.image_urls = Array.isArray(parsed) ? parsed.filter(Boolean) : []
+      return
+    } catch (error) {
+      console.warn('Failed to parse post image urls:', rawValue, error)
+    }
+  }
+
+  postData.image_urls = []
+}
 
 const handleVote = async (direction) => {
   const token = localStorage.getItem('token')
@@ -161,6 +195,7 @@ onMounted(async () => {
       post.value = res.data.data
       if (post.value.vote_status === undefined) post.value.vote_status = 0
       post.value.votes = Number(post.value.votes)
+      normalizeImageUrls(post.value)
     } else {
       ElMessage.error(res.data.msg)
     }
@@ -244,5 +279,19 @@ onMounted(async () => {
   .meta {
     justify-content: flex-start;
   }
+}
+/* 新增：详情页图片样式 */
+.detail-images {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-image-item {
+  width: 100%;
+  max-height: 600px; /* 防止竖图太长霸屏 */
+  border-radius: 8px;
+  background-color: #f8f9fa; /* 给透明图片加个极浅的底色 */
 }
 </style>

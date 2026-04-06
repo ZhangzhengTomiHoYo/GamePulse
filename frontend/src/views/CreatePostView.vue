@@ -133,13 +133,21 @@ const handleImageUpload = async (options) => {
   try {
     const res = await uploadImage(options.file)
 
-    if (res.data.code !== 1000 || !res.data.data) {
-      throw new Error(res.data.msg || '图片上传失败')
+    // 兼容层：防止你在项目的 axios 配置了拦截器直接返回了 res.data
+    const responseData = res.data !== undefined ? res.data : res
+
+    if (responseData.code !== 1000 || !responseData.data) {
+      throw new Error(responseData.msg || '图片上传失败')
     }
 
-    options.onSuccess({ url: res.data.data }, options.file)
+    // 【核心修复】：绝对不要手动调用 options.onSuccess()
+    // 只需要 return 拼装好的对象，el-upload 底层会自动拿着它去触发 handleUploadSuccess
+    return { url: responseData.data }
+    
   } catch (error) {
-    options.onError(error)
+    // 【核心修复】：直接向上抛出 Promise 拒绝态
+    // el-upload 底层会自动捕捉，并触发 handleUploadError
+    return Promise.reject(error)
   }
 }
 

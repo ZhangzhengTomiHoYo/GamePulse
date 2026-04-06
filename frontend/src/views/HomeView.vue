@@ -85,7 +85,19 @@
                 
                 <h2 class="post-title">{{ post.title }}</h2>
                 <p class="post-abstract">{{ post.content }}</p>
-                
+                <div class="post-images" v-if="post.image_urls && post.image_urls.length > 0">
+                  <el-image
+                    v-for="(url, index) in post.image_urls"
+                    :key="index"
+                    :src="url"
+                    class="image-item"
+                    fit="cover"
+                    :preview-src-list="post.image_urls"
+                    :initial-index="index"
+                    preview-teleported
+                    @click.stop="() => {}" 
+                  />
+                  </div>
                 <div class="post-actions">
                   <div class="action-group vote-group">
                     <div 
@@ -219,6 +231,27 @@ const getCommunityList = async () => {
   } catch (error) { console.error(error) }
 }
 
+const normalizeImageUrls = (post) => {
+  const rawValue = post.image_urls ?? post.image_url ?? post.imageURLs
+
+  if (Array.isArray(rawValue)) {
+    post.image_urls = rawValue.filter(Boolean)
+    return
+  }
+
+  if (typeof rawValue === 'string' && rawValue.trim()) {
+    try {
+      const parsed = JSON.parse(rawValue)
+      post.image_urls = Array.isArray(parsed) ? parsed.filter(Boolean) : []
+      return
+    } catch (error) {
+      console.warn('Failed to parse post image urls:', rawValue, error)
+    }
+  }
+
+  post.image_urls = []
+}
+
 const fetchPosts = async () => {
   const token = localStorage.getItem('token')
   if (!token) return
@@ -233,9 +266,11 @@ const fetchPosts = async () => {
 
     if (res.data.code === 1000) {
       const list = res.data.data || []
+      console.log('Raw Post Data:', list[0])
       list.forEach(item => {
         if (item.vote_status === undefined) item.vote_status = 0
         item.votes = Number(item.votes)
+        normalizeImageUrls(item)
       })
       posts.value = list
     }
@@ -466,4 +501,27 @@ onMounted(() => {
 .site-footer { font-size: 12px; color: #c9cdd4; text-align: center; line-height: 20px; }
 .site-footer a { color: #c9cdd4; text-decoration: none; }
 .site-footer a:hover { color: #86909c; }
+
+/* 新增：列表页图片九宫格样式 */
+.post-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.image-item {
+  width: 120px;
+  height: 120px;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+  cursor: zoom-in;
+}
+
+@media (max-width: 640px) {
+  .image-item {
+    width: calc(33.33% - 6px); /* 移动端自适应三列 */
+    height: 100px;
+  }
+}
 </style>
