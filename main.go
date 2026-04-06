@@ -52,7 +52,7 @@ func main() {
 	zap.L().Debug("logger init success...")
 
 	// 3. 初始化MySQL连接
-	if err := mysql.Init(setting.Conf.MySQLConfig); err != nil {
+	if err := mysql.Init(setting.Conf.PostgresConfig); err != nil {
 		fmt.Printf("init setting failed error:%v\n", err)
 		return
 	}

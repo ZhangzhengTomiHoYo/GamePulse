@@ -7,12 +7,12 @@ import (
 )
 
 func init() {
-	dbCfg := setting.MySQLConfig{
+	dbCfg := setting.PostgresConfig{
 		Host:         "127.0.0.1",
-		User:         "root",
+		User:         "postgres",
 		Password:     "123456",
-		DbName:       "bluebell",
-		Port:         3306,
+		DbName:       "gamepulse",
+		Port:         5432,
 		MaxOpenConns: 10,
 		MaxIdleConns: 10,
 	}

@@ -12,15 +12,15 @@ var Conf = new(AppConfig)
 
 // viper的Tag
 type AppConfig struct {
-	Name         string `mapstructure:"name"`
-	Mode         string `mapstructure:"mode"`
-	Version      string `mapstructure:"version"`
-	StartTime    string `mapstructure:"start_time"`
-	MachineID    int64  `mapstructure:"machine_id"`
-	Port         int    `mapstructure:"port"`
-	*LogConfig   `mapstructure:"log"`
-	*MySQLConfig `mapstructure:"mysql"`
-	*RedisConfig `mapstructure:"redis"`
+	Name            string `mapstructure:"name"`
+	Mode            string `mapstructure:"mode"`
+	Version         string `mapstructure:"version"`
+	StartTime       string `mapstructure:"start_time"`
+	MachineID       int64  `mapstructure:"machine_id"`
+	Port            int    `mapstructure:"port"`
+	*LogConfig      `mapstructure:"log"`
+	*PostgresConfig `mapstructure:"postgres"`
+	*RedisConfig    `mapstructure:"redis"`
 }
 
 type LogConfig struct {
@@ -31,7 +31,7 @@ type LogConfig struct {
 	MaxBackups int    `mapstructure:"max_backups"`
 }
 
-type MySQLConfig struct {
+type PostgresConfig struct {
 	Host         string `mapstructure:"host"`
 	User         string `mapstructure:"user"`
 	Password     string `mapstructure:"password"`
