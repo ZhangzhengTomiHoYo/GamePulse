@@ -5,6 +5,7 @@ import (
 	"bluebell/dao/redis"
 	"bluebell/models"
 	"bluebell/pkg/snowflake"
+	"strconv"
 
 	"go.uber.org/zap"
 )
@@ -53,8 +54,16 @@ func GetPostByID(pid int64) (data *models.ApiPostDetail, err error) {
 			zap.Error(err))
 		return
 	}
+	// 根据 社区id 在 redis 中查询投票数
+	// 第一步：int64 -> string
+	pidStr := strconv.FormatInt(pid, 10)
+
+	// 第二步：string -> []string
+	pidStrSlice := []string{pidStr}
+	nums, err := redis.GetPostVoteData(pidStrSlice)
 	data = &models.ApiPostDetail{
 		AuthorName:      user.Username,
+		VoteNum:         nums[0],
 		Post:            post,
 		CommunityDetail: community,
 	}
