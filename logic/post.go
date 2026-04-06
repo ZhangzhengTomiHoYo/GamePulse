@@ -10,6 +10,41 @@ import (
 	"go.uber.org/zap"
 )
 
+// DeletePost 删除帖子逻辑
+func DeletePost(postID, authorID int64) error {
+	// 1. 先查询帖子详情，主要是为了拿到 CommunityID 以便后续清理 Redis 社区集合
+	post, err := pgsql.GetPostByID(postID)
+	if err != nil {
+		zap.L().Error("pgsql.GetPostByID failed in DeletePost",
+			zap.Int64("postID", postID),
+			zap.Error(err))
+		return err // 帖子不存在或查询失败
+	}
+
+	// 2. 数据库层面执行软删除（底层的 SQL 已经附带了 author_id = $2 的校验防越权）
+	err = pgsql.SoftDeletePost(postID, authorID)
+	if err != nil {
+		zap.L().Error("pgsql.SoftDeletePost failed",
+			zap.Int64("postID", postID),
+			zap.Int64("authorID", authorID),
+			zap.Error(err))
+		return err
+	}
+
+	// 3. 执行 Redis 缓存连环清理
+	err = redis.RemovePostFromCache(postID, post.CommunityID)
+	if err != nil {
+		// 缓存清理失败记录严重日志。虽然数据库已经删了，但缓存有残留会导致脏数据
+		zap.L().Error("redis.RemovePostFromCache failed",
+			zap.Int64("postID", postID),
+			zap.Int64("communityID", post.CommunityID),
+			zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
 func CreatePost(p *models.Post) (err error) {
 	// 1. 生成post id
 	p.ID = snowflake.GenID()

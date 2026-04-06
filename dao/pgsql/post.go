@@ -2,10 +2,32 @@ package pgsql
 
 import (
 	"bluebell/models"
+	"errors"
 	"strconv"
 
 	"github.com/lib/pq"
 )
+
+// SoftDeletePost 逻辑删除帖子（自带防越权校验）
+func SoftDeletePost(postID, authorID int64) error {
+	// 只有当 post_id 和 author_id 都匹配，且 status 原本为 1 时，才允许删除
+	sqlStr := `UPDATE post SET status = 0, update_time = CURRENT_TIMESTAMP WHERE post_id = $1 AND author_id = $2 AND status = 1`
+
+	res, err := db.Exec(sqlStr, postID, authorID)
+	if err != nil {
+		return err
+	}
+
+	// 校验是否真的修改了数据，如果为0说明不是自己的帖子或帖子已删
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("post not exist or no permission")
+	}
+	return nil
+}
 
 func CreatePost(p *models.Post) error {
 	sqlStr := `insert into post(post_id, title, content, author_id, community_id) values($1, $2, $3, $4, $5) returning post_id`

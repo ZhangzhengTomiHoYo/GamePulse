@@ -3,10 +3,38 @@ package redis
 import (
 	"bluebell/models"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
 )
+
+// RemovePostFromCache 删帖后的缓存连环清理
+func RemovePostFromCache(postID, communityID int64) error {
+	postIDStr := strconv.FormatInt(postID, 10)
+
+	// 注意：必须套用 getRedisKey 获取带前缀的真实 Key
+	timeKey := getRedisKey(KeyPostTimeZSet)
+	scoreKey := getRedisKey(KeyPostScoreZSet)
+	communityKey := getRedisKey(KeyCommunitySetPF + fmt.Sprintf("%d", communityID))
+	votedKey := getRedisKey(KeyPostVotedZSetPF + postIDStr)
+
+	// 开启 Pipeline 流水线一次性提交（注意你的库版本不需要传 ctx）
+	pipeline := client.Pipeline()
+
+	// 1. 从时间线排行榜剔除
+	pipeline.ZRem(timeKey, postIDStr)
+	// 2. 从分数排行榜剔除
+	pipeline.ZRem(scoreKey, postIDStr)
+	// 3. 从该社区的帖子集合中剔除
+	pipeline.SRem(communityKey, postIDStr)
+	// 4. 删除该帖子专属的投票记录
+	pipeline.Del(votedKey)
+
+	// 执行流水线
+	_, err := pipeline.Exec()
+	return err
+}
 
 func getIDsFromKey(key string, page, size int64) ([]string, error) {
 	// 2. 确定查询的索引起始点
@@ -75,7 +103,7 @@ func GetCommunityPostIdsInOrder(p *models.ParamPostList) ([]string, error) {
 		pipeline := client.Pipeline()
 		pipeline.ZInterStore(key, redis.ZStore{
 			Aggregate: "MAX",
-		}, cKey, orderKey) // zinterscore 计算
+		}, cKey, orderKey)                   // zinterscore 计算
 		pipeline.Expire(key, 60*time.Second) // 设置超时时间
 		_, err := pipeline.Exec()
 		if err != nil {

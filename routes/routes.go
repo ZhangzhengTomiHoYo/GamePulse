@@ -50,6 +50,8 @@ func Setup(mode string) *gin.Engine {
 		v1.GET("/posts2", controllers.GetListDetailHandler2)
 
 		v1.POST("/vote", controllers.PostVoteController)
+
+		v1.DELETE("/post/:id", controllers.DeletePostHandler)
 	}
 	pprof.Register(r) // 注册pprof相关路由
 	r.NoRoute(func(c *gin.Context) {

@@ -9,6 +9,46 @@ import (
 	"go.uber.org/zap"
 )
 
+// DeletePostHandler 删除帖子接口
+// @Summary 删除帖子接口
+// @Description 作者删除自己的帖子（软删除并清理Redis）
+// @Tags 帖子相关接口
+// @Accept application/json
+// @Produce application/json
+// @Param Authorization header string true "Bearer 用户令牌"
+// @Param id path int64 true "帖子id"
+// @Security ApiKeyAuth
+// @Success 200 {object} _ResponseData
+// @Router /post/{id} [delete]
+func DeletePostHandler(c *gin.Context) {
+	// 1. 获取路径参数
+	pidStr := c.Param("id")
+	pid, err := strconv.ParseInt(pidStr, 10, 64)
+	if err != nil {
+		zap.L().Error("delete post with invalid param", zap.Error(err))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
+
+	// 2. 从上下文(Context)获取当前发请求的用户ID (鉴权中间件写入的)
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		ResponseError(c, CodeNeedLogin)
+		return
+	}
+
+	// 3. 调用逻辑层执行删帖
+	if err := logic.DeletePost(pid, userID); err != nil {
+		zap.L().Error("logic.DeletePost failed", zap.Int64("postID", pid), zap.Int64("userID", userID), zap.Error(err))
+		// 注：如果你在 code.go 里加了 CodeNoPermission，这里可以换成对应的错误码
+		ResponseError(c, CodeNoPermission)
+		return
+	}
+
+	// 4. 返回响应
+	ResponseSuccess(c, nil)
+}
+
 // CreatePostHandler 创建帖子接口
 // @Summary 创建帖子接口
 // @Description 创建帖子接口
