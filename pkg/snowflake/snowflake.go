@@ -3,6 +3,7 @@ package snowflake
 import (
 	"fmt"
 	"time"
+
 	sf "github.com/bwmarrin/snowflake"
 )
 

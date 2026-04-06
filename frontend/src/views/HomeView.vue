@@ -5,7 +5,7 @@
       <div class="header-inner">
         <div class="logo-area" @click="router.push('/')">
           <span class="logo-icon">🎐</span>
-          <span class="logo-text">Bluebell</span>
+          <span class="logo-text">GamePulse</span>
         </div>
         
         <div class="user-area">
@@ -127,10 +127,10 @@
             
             <el-card class="widget-card welcome-widget" shadow="never">
               <div class="widget-header">
-                <h3>Bluebell 社区</h3>
+                <h3>GamePulse 社区</h3>
               </div>
               <div class="widget-content">
-                <p>一个专注于技术分享与交流的极简社区。</p>
+                <p>专注于游戏社区舆情分析</p>
                 <div class="stat-row">
                   <div class="stat-item">
                     <div class="count">100+</div>
@@ -151,14 +151,14 @@
                 </div>
               </template>
               <ul class="notice-list">
-                <li>🎉 Bluebell v1.0 正式上线！</li>
+                <li>🎉 GamePulse v1.0 正式上线！</li>
                 <li>🔒 关于社区账号安全的说明</li>
-                <li>📝 如何写出一篇高质量的技术文章</li>
+                <li>📝 创作你喜欢的游戏文章</li>
               </ul>
             </el-card>
             
             <div class="site-footer">
-              © 2023 Bluebell Blog <br>
+              © 2026 GamePulse Blog <br>
               <a href="#">关于我们</a> · <a href="#">联系作者</a>
             </div>
 

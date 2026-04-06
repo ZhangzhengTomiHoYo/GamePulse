@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="card">
       <div class="header">
-        <h2>Bluebell Blog</h2>
+        <h2>GamePulse社区</h2>
         <p>{{ isLogin ? '账号登录' : '注册新账号' }}</p>
       </div>
 
