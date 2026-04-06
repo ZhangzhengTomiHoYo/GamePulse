@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"bluebell/dao/mysql"
+	"bluebell/dao/pgsql"
 	"bluebell/logic"
 	"bluebell/models"
 	"errors"
@@ -61,7 +61,7 @@ func SignUpHandler(c *gin.Context) {
 	// 2. 业务处理
 	if err := logic.SignUp(p); err != nil {
 		zap.L().Error("logic.SignUp failed", zap.Error(err))
-		if errors.Is(err, mysql.ErrorUserExist) {
+		if errors.Is(err, pgsql.ErrorUserExist) {
 			ResponseError(c, CodeUserExist)
 			return
 		}
@@ -100,7 +100,7 @@ func LoginHandler(c *gin.Context) {
 	user, err := logic.Login(p)
 	if err != nil {
 		zap.L().Error("logic.Login failed", zap.String("username", p.Username), zap.Error(err))
-		if errors.Is(err, mysql.ErrorUserNotExist) {
+		if errors.Is(err, pgsql.ErrorUserNotExist) {
 			ResponseError(c, CodeUserNoteExist)
 			return
 		}

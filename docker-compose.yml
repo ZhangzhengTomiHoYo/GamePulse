@@ -17,7 +17,7 @@ services:
     # -----------------------------------------------------------
     # 修正：使用数组格式 (方括号)，确保 wait-for.sh 能接收到参数
     # -----------------------------------------------------------
-    command: ["/wait-for.sh", "mysql:3306", "redis:6379", "--", "/bluebell_app", "./conf/config.yaml"]
+    command: ["/wait-for.sh", "pgsql:5432", "redis:6379", "--", "/bluebell_app", "./conf/config.yaml"]
     depends_on:
       - mysql
       - redis

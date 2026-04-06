@@ -2,7 +2,7 @@ package main
 
 import (
 	"bluebell/controllers"
-	"bluebell/dao/mysql"
+	"bluebell/dao/pgsql"
 	"bluebell/dao/redis"
 	"bluebell/logger"
 	"bluebell/pkg/snowflake"
@@ -52,11 +52,11 @@ func main() {
 	zap.L().Debug("logger init success...")
 
 	// 3. 初始化MySQL连接
-	if err := mysql.Init(setting.Conf.PostgresConfig); err != nil {
+	if err := pgsql.Init(setting.Conf.PostgresConfig); err != nil {
 		fmt.Printf("init setting failed error:%v\n", err)
 		return
 	}
-	defer mysql.Close()
+	defer pgsql.Close()
 
 	// 4. 初始化Redis连接
 	if err := redis.Init(); err != nil {

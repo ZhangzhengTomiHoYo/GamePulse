@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"bluebell/dao/mysql"
+	"bluebell/dao/pgsql"
 	"bluebell/dao/redis"
 	"bluebell/models"
 	"bluebell/pkg/snowflake"
@@ -14,7 +14,7 @@ func CreatePost(p *models.Post) (err error) {
 	p.ID = snowflake.GenID()
 	// 2. 保存到数据库
 	// 3. 返回
-	err = mysql.CreatePost(p)
+	err = pgsql.CreatePost(p)
 	if err != nil {
 		return err
 	}
@@ -30,25 +30,25 @@ func GetPostByID(pid int64) (data *models.ApiPostDetail, err error) {
 	// data是一个指针，要初始化
 	data = new(models.ApiPostDetail)
 	// 查询并组合我们接口想用的数据
-	post, err := mysql.GetPostByID(pid)
+	post, err := pgsql.GetPostByID(pid)
 	if err != nil {
-		zap.L().Error("mysql.GetPostByID(pid) failed",
+		zap.L().Error("pgsql.GetPostByID(pid) failed",
 			zap.Int64("pid", pid),
 			zap.Error(err))
 		return
 	}
 	// 根据作者id查询作者信息
-	user, err := mysql.GetUserByID(post.AuthorID)
+	user, err := pgsql.GetUserByID(post.AuthorID)
 	if err != nil {
-		zap.L().Error("mysql.GetUserByID(post.AuthorID) failed",
+		zap.L().Error("pgsql.GetUserByID(post.AuthorID) failed",
 			zap.Int64("author_id", post.AuthorID),
 			zap.Error(err))
 		return
 	}
 	// 根据社区id查询社区详细信息
-	community, err := mysql.GetCommunityDetailByID(post.CommunityID)
+	community, err := pgsql.GetCommunityDetailByID(post.CommunityID)
 	if err != nil {
-		zap.L().Error("mysql.GetCommunityDetailByID(post.CommunityID) failed",
+		zap.L().Error("pgsql.GetCommunityDetailByID(post.CommunityID) failed",
 			zap.Int64("author_id", post.AuthorID),
 			zap.Error(err))
 		return
@@ -63,7 +63,7 @@ func GetPostByID(pid int64) (data *models.ApiPostDetail, err error) {
 
 // GetPostList 获取帖子列表
 func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
-	posts, err := mysql.GetPostList(page, size)
+	posts, err := pgsql.GetPostList(page, size)
 	if err != nil {
 		return nil, err
 	}
@@ -71,17 +71,17 @@ func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
 
 	for _, post := range posts {
 		// 根据作者id查询作者信息
-		user, err := mysql.GetUserByID(post.AuthorID)
+		user, err := pgsql.GetUserByID(post.AuthorID)
 		if err != nil {
-			zap.L().Error("mysql.GetUserByID(post.AuthorID) failed",
+			zap.L().Error("pgsql.GetUserByID(post.AuthorID) failed",
 				zap.Int64("author_id", post.AuthorID),
 				zap.Error(err))
 			continue
 		}
 		// 根据社区id查询社区详细信息
-		community, err := mysql.GetCommunityDetailByID(post.CommunityID)
+		community, err := pgsql.GetCommunityDetailByID(post.CommunityID)
 		if err != nil {
-			zap.L().Error("mysql.GetCommunityDetailByID(post.CommunityID) failed",
+			zap.L().Error("pgsql.GetCommunityDetailByID(post.CommunityID) failed",
 				zap.Int64("author_id", post.AuthorID),
 				zap.Error(err))
 			continue
@@ -110,7 +110,7 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 	}
 	// 3. 根据id取MySQL数据库查询帖子详细信息
 	// 返回的数据还要按照我给定的id的顺序返回
-	posts, err := mysql.GetPostListByIDs(ids)
+	posts, err := pgsql.GetPostListByIDs(ids)
 	if err != nil {
 		return
 	}
@@ -124,17 +124,17 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 	// 下面的和上面一样
 	for idx, post := range posts {
 		// 根据作者id查询作者信息
-		user, err := mysql.GetUserByID(post.AuthorID)
+		user, err := pgsql.GetUserByID(post.AuthorID)
 		if err != nil {
-			zap.L().Error("mysql.GetUserByID(post.AuthorID) failed",
+			zap.L().Error("pgsql.GetUserByID(post.AuthorID) failed",
 				zap.Int64("author_id", post.AuthorID),
 				zap.Error(err))
 			continue
 		}
 		// 根据社区id查询社区详细信息
-		community, err := mysql.GetCommunityDetailByID(post.CommunityID)
+		community, err := pgsql.GetCommunityDetailByID(post.CommunityID)
 		if err != nil {
-			zap.L().Error("mysql.GetCommunityDetailByID(post.CommunityID) failed",
+			zap.L().Error("pgsql.GetCommunityDetailByID(post.CommunityID) failed",
 				zap.Int64("author_id", post.AuthorID),
 				zap.Error(err))
 			continue
@@ -163,7 +163,7 @@ func GetCommunityPostList(p *models.ParamPostList) (data []*models.ApiPostDetail
 	}
 	// 3. 根据id取MySQL数据库查询帖子详细信息
 	// 返回的数据还要按照我给定的id的顺序返回
-	posts, err := mysql.GetPostListByIDs(ids)
+	posts, err := pgsql.GetPostListByIDs(ids)
 	if err != nil {
 		return
 	}
@@ -177,17 +177,17 @@ func GetCommunityPostList(p *models.ParamPostList) (data []*models.ApiPostDetail
 	// 下面的和上面一样
 	for idx, post := range posts {
 		// 根据作者id查询作者信息
-		user, err := mysql.GetUserByID(post.AuthorID)
+		user, err := pgsql.GetUserByID(post.AuthorID)
 		if err != nil {
-			zap.L().Error("mysql.GetUserByID(post.AuthorID) failed",
+			zap.L().Error("pgsql.GetUserByID(post.AuthorID) failed",
 				zap.Int64("author_id", post.AuthorID),
 				zap.Error(err))
 			continue
 		}
 		// 根据社区id查询社区详细信息
-		community, err := mysql.GetCommunityDetailByID(post.CommunityID)
+		community, err := pgsql.GetCommunityDetailByID(post.CommunityID)
 		if err != nil {
-			zap.L().Error("mysql.GetCommunityDetailByID(post.CommunityID) failed",
+			zap.L().Error("pgsql.GetCommunityDetailByID(post.CommunityID) failed",
 				zap.Int64("author_id", post.AuthorID),
 				zap.Error(err))
 			continue

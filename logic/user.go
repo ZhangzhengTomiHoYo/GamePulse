@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"bluebell/dao/mysql"
+	"bluebell/dao/pgsql"
 	"bluebell/models"
 	"bluebell/pkg/jwt"
 	"bluebell/pkg/snowflake"
@@ -14,7 +14,7 @@ import (
 func SignUp(p *models.ParaSignUp) (err error) {
 	// 1.判断用户存不存在
 
-	if err = mysql.CheckUserExist(p.Username); err != nil {
+	if err = pgsql.CheckUserExist(p.Username); err != nil {
 		return err
 	}
 
@@ -27,7 +27,7 @@ func SignUp(p *models.ParaSignUp) (err error) {
 		Password: p.Password,
 	}
 	// 3.保存进数据库
-	return mysql.InsertUser(user)
+	return pgsql.InsertUser(user)
 }
 
 func Login(p *models.ParaLogin) (user *models.User, err error) {
@@ -36,7 +36,7 @@ func Login(p *models.ParaLogin) (user *models.User, err error) {
 		Password: p.Password,
 	}
 	// 传递的是指针，就能拿到user.UserID
-	if err := mysql.Login(user); err != nil {
+	if err := pgsql.Login(user); err != nil {
 		return nil, err
 	}
 

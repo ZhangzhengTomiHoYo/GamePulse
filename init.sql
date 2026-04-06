@@ -1,7 +1,7 @@
 -- 1. 创建数据库
 CREATE DATABASE IF NOT EXISTS bluebell;
 
--- 2. 切换到 mysql 系统库
+-- 2. 切换到 pgsql 系统库
 USE mysql;
 
 -- 3. 修正认证方式和密码
