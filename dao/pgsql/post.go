@@ -30,9 +30,11 @@ func SoftDeletePost(postID, authorID int64) error {
 }
 
 func CreatePost(p *models.Post) error {
-	sqlStr := `insert into post(post_id, title, content, author_id, community_id) values($1, $2, $3, $4, $5) returning post_id`
+	// 增加 image_url 的插入
+	sqlStr := `insert into post(post_id, title, content, author_id, community_id, image_url) values($1, $2, $3, $4, $5, $6) returning post_id`
 	var insertedPostID int64
-	if err := db.QueryRowx(sqlStr, p.ID, p.Title, p.Content, p.AuthorID, p.CommunityID).Scan(&insertedPostID); err != nil {
+	// 记得把 p.ImageURL 传进去
+	if err := db.QueryRowx(sqlStr, p.ID, p.Title, p.Content, p.AuthorID, p.CommunityID, p.ImageURL).Scan(&insertedPostID); err != nil {
 		return err
 	}
 	p.ID = insertedPostID

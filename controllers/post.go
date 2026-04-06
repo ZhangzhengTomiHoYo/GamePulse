@@ -3,11 +3,16 @@ package controllers
 import (
 	"bluebell/logic"
 	"bluebell/models"
+	"encoding/json"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+func UploadImageHandler(c *gin.Context) {
+
+}
 
 // DeletePostHandler 删除帖子接口
 // @Summary 删除帖子接口
@@ -51,38 +56,60 @@ func DeletePostHandler(c *gin.Context) {
 
 // CreatePostHandler 创建帖子接口
 // @Summary 创建帖子接口
-// @Description 创建帖子接口
+// @Description 创建带图片的帖子接口
 // @Tags 帖子相关接口
 // @Accept application/json
 // @Produce application/json
-// @Param object body models.Post true "帖子参数"
+// @Param object body models.ParamCreatePost true "帖子参数"
 // @Security ApiKeyAuth
 // @Success 200 {object} _ResponseData
 // @Router /post [post]
 func CreatePostHandler(c *gin.Context) {
-	// 1. 获取参数及参数的校验
-	p := new(models.Post)
+	// 1. 获取参数及参数的校验 (注意：这里改成了绑定 ParamCreatePost)
+	p := new(models.ParamCreatePost)
 	if err := c.ShouldBindJSON(p); err != nil {
 		zap.L().Debug("c.ShouldBindJSON(p) error", zap.Any("err", err))
 		zap.L().Error("create post with invalid param")
 		ResponseError(c, CodeInvalidParam)
 		return
 	}
+
 	// 从c取到当前发请求的用户id
 	userID, err := getCurrentUserID(c)
 	if err != nil {
 		ResponseError(c, CodeNeedLogin)
 		return
 	}
-	p.AuthorID = userID
-	// 2. 创建帖子
-	if err := logic.CreatePost(p); err != nil {
-		zap.L().Error("logic.CreatePost(p) failed", zap.Error(err))
+
+	// 2. 数据组装：将接收到的请求参数拼装成数据库模型
+	post := &models.Post{
+		AuthorID:    userID,
+		CommunityID: p.CommunityID,
+		Title:       p.Title,
+		Content:     p.Content,
+	}
+
+	// 极其关键的一步：将前端传来的图片数组序列化为 JSON 字符串
+	if len(p.ImageURLs) > 0 {
+		b, err := json.Marshal(p.ImageURLs)
+		if err != nil {
+			zap.L().Error("json.Marshal(p.ImageURLs) failed", zap.Error(err))
+			ResponseError(c, CodeServeBusy)
+			return
+		}
+		post.ImageURL = string(b) // 变成了类似 '["http://...1.jpg", "http://...2.jpg"]'
+	} else {
+		post.ImageURL = "[]" // 如果没发图片，存个空数组的 JSON 字符串
+	}
+
+	// 3. 创建帖子 (直接把你拼装好的 post 扔给底层)
+	if err := logic.CreatePost(post); err != nil {
+		zap.L().Error("logic.CreatePost(post) failed", zap.Error(err))
 		ResponseError(c, CodeServeBusy)
 		return
 	}
 
-	// 3. 返回响应
+	// 4. 返回响应
 	ResponseSuccess(c, nil)
 }
 

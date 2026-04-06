@@ -5,6 +5,7 @@ import (
 	"bluebell/dao/redis"
 	"bluebell/models"
 	"bluebell/pkg/snowflake"
+	"encoding/json"
 	"strconv"
 
 	"go.uber.org/zap"
@@ -96,6 +97,15 @@ func GetPostByID(pid int64) (data *models.ApiPostDetail, err error) {
 	// 第二步：string -> []string
 	pidStrSlice := []string{pidStr}
 	nums, err := redis.GetPostVoteData(pidStrSlice)
+
+	// 【核心新增逻辑】：反序列化图片字符串
+	var imageURLs []string
+	if post.ImageURL != "" && post.ImageURL != "[]" && post.ImageURL != "null" {
+		if err := json.Unmarshal([]byte(post.ImageURL), &imageURLs); err != nil {
+			zap.L().Warn("json.Unmarshal image_url failed", zap.Error(err))
+		}
+	}
+
 	data = &models.ApiPostDetail{
 		AuthorName:      user.Username,
 		VoteNum:         nums[0],
@@ -130,6 +140,15 @@ func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
 				zap.Error(err))
 			continue
 		}
+
+		// 【核心新增逻辑】：反序列化图片字符串
+		var imageURLs []string
+		if post.ImageURL != "" && post.ImageURL != "[]" && post.ImageURL != "null" {
+			if err := json.Unmarshal([]byte(post.ImageURL), &imageURLs); err != nil {
+				zap.L().Warn("json.Unmarshal image_url failed", zap.Error(err))
+			}
+		}
+
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
 			Post:            post,
@@ -183,6 +202,15 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 				zap.Error(err))
 			continue
 		}
+
+		// 【核心新增逻辑】：反序列化图片字符串
+		var imageURLs []string
+		if post.ImageURL != "" && post.ImageURL != "[]" && post.ImageURL != "null" {
+			if err := json.Unmarshal([]byte(post.ImageURL), &imageURLs); err != nil {
+				zap.L().Warn("json.Unmarshal image_url failed", zap.Error(err))
+			}
+		}
+
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
 			VoteNum:         voteData[idx],
@@ -236,6 +264,15 @@ func GetCommunityPostList(p *models.ParamPostList) (data []*models.ApiPostDetail
 				zap.Error(err))
 			continue
 		}
+
+		// 【核心新增逻辑】：反序列化图片字符串
+		var imageURLs []string
+		if post.ImageURL != "" && post.ImageURL != "[]" && post.ImageURL != "null" {
+			if err := json.Unmarshal([]byte(post.ImageURL), &imageURLs); err != nil {
+				zap.L().Warn("json.Unmarshal image_url failed", zap.Error(err))
+			}
+		}
+
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
 			VoteNum:         voteData[idx],
