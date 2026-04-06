@@ -20,14 +20,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// @title Bluebell_Zhang_Zheng
+// @title GamePulse
 // @version 1.0
-// @description 张政的第一个完整的golang项目
+// @description 游戏脉络（游脉）社区，专注游戏社区舆情分析
 // @termsOfService http://swagger.io/terms/
 
-// @contact.name 这里写联系人信息
+// @contact.name 张政
 // @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
+// @contact.email 1296775258@qq.com
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
