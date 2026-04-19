@@ -137,7 +137,13 @@ func CreatePostHandler(c *gin.Context) {
 		return
 	}
 
-	// 4. 返回响应
+	// 4. 异步调用大模型对帖子进行情绪打分。
+	// 这里只做投递，发帖主链路已经成功，不因为分析任务异常而回滚接口响应。
+	if err := logic.AnalyzePostAsync(post); err != nil {
+		zap.L().Warn("logic.AnalyzePostAsync(post) failed", zap.Error(err))
+	}
+
+	// 5. 返回响应
 	ResponseSuccess(c, nil)
 }
 

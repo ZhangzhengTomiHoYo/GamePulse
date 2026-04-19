@@ -4,6 +4,7 @@ import (
 	"bluebell/models"
 	"bluebell/setting"
 	"testing"
+	"time"
 )
 
 func init() {
@@ -24,7 +25,7 @@ func init() {
 
 func TestCreatePost(t *testing.T) {
 	post := &models.Post{
-		ID:          10,
+		ID:          time.Now().UnixNano(),
 		AuthorID:    123,
 		CommunityID: 1,
 		Title:       "test",

@@ -81,6 +81,15 @@
                   <el-tag size="small" type="info" effect="plain" class="community-tag">
                     {{ post.community?.name || '综合' }}
                   </el-tag>
+                  <el-tag
+                    v-if="post.sentiment_label"
+                    size="small"
+                    effect="light"
+                    :type="getSentimentTagType(post.sentiment_label)"
+                    class="sentiment-tag"
+                  >
+                    {{ getSentimentLabelText(post.sentiment_label) }}
+                  </el-tag>
                 </div>
                 
                 <h2 class="post-title">{{ post.title }}</h2>
@@ -219,6 +228,25 @@ const formatTime = (timeStr) => {
   if (!timeStr) return ''
   const date = new Date(timeStr)
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const sentimentDisplayMap = {
+  positive: { text: '正向', type: 'success' },
+  neutral: { text: '中性', type: 'info' },
+  negative: { text: '负向', type: 'danger' }
+}
+
+const normalizeSentimentLabel = (label) => {
+  if (typeof label !== 'string') return ''
+  return label.trim().toLowerCase()
+}
+
+const getSentimentLabelText = (label) => {
+  return sentimentDisplayMap[normalizeSentimentLabel(label)]?.text || ''
+}
+
+const getSentimentTagType = (label) => {
+  return sentimentDisplayMap[normalizeSentimentLabel(label)]?.type || 'info'
 }
 
 const getCommunityList = async () => {
@@ -417,12 +445,22 @@ onMounted(() => {
 .post-meta-top {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   font-size: 13px;
   color: #86909c;
   margin-bottom: 8px;
 }
 .author-name { color: #515767; font-weight: 500; }
 .divider { margin: 0 8px; color: #e5e6eb; }
+.community-tag,
+.sentiment-tag {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.sentiment-tag {
+  margin-left: 8px;
+  font-weight: 600;
+}
 
 .post-title {
   font-size: 18px;

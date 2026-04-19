@@ -6,6 +6,7 @@ import (
 	"bluebell/dao/redis"
 	"bluebell/models"
 	"bluebell/pkg/snowflake"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -149,6 +150,7 @@ func GetPostByID(pid int64) (data *models.ApiPostDetail, err error) {
 		Post:            post,
 		CommunityDetail: community,
 	}
+	attachPostAnalysis(data)
 	return
 }
 
@@ -192,6 +194,7 @@ func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
 			Post:            post,
 			CommunityDetail: community,
 		}
+		attachPostAnalysis(postDetail)
 		data = append(data, postDetail)
 
 	}
@@ -256,6 +259,7 @@ func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err er
 			Post:            post,
 			CommunityDetail: community,
 		}
+		attachPostAnalysis(postDetail)
 		data = append(data, postDetail)
 
 	}
@@ -319,6 +323,7 @@ func GetCommunityPostList(p *models.ParamPostList) (data []*models.ApiPostDetail
 			Post:            post,
 			CommunityDetail: community,
 		}
+		attachPostAnalysis(postDetail)
 		data = append(data, postDetail)
 
 	}
@@ -339,4 +344,22 @@ func GetPostListNew(p *models.ParamPostList) (data []*models.ApiPostDetail, err 
 		zap.L().Error("GetPostListNew failed", zap.Error(err))
 	}
 	return
+}
+
+func attachPostAnalysis(detail *models.ApiPostDetail) {
+	if detail == nil || detail.Post == nil {
+		return
+	}
+
+	analysis, err := pgsql.GetPostAnalysisByPostID(detail.Post.ID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			zap.L().Warn("pgsql.GetPostAnalysisByPostID failed",
+				zap.Int64("postID", detail.Post.ID),
+				zap.Error(err))
+		}
+		return
+	}
+
+	detail.SentimentLabel = analysis.SentimentLabel
 }

@@ -22,6 +22,7 @@ type AppConfig struct {
 	*PostgresConfig `mapstructure:"postgres"`
 	*RedisConfig    `mapstructure:"redis"`
 	*MinIOConfig    `mapstructure:"minio"` // 【新增】MinIO 配置
+	*LLMConfig      `mapstructure:"llm"`
 }
 
 // 2. 在文件底部定义 MinIOConfig 结构体
@@ -31,6 +32,13 @@ type MinIOConfig struct {
 	SecretKey  string `mapstructure:"secret_key"`
 	UseSSL     bool   `mapstructure:"use_ssl"`
 	BucketName string `mapstructure:"bucket_name"`
+}
+
+type LLMConfig struct {
+	APIKey         string `mapstructure:"api_key"`
+	BaseURL        string `mapstructure:"base_url"`
+	Model          string `mapstructure:"model"`
+	TimeoutSeconds int    `mapstructure:"timeout_seconds"`
 }
 
 type LogConfig struct {
