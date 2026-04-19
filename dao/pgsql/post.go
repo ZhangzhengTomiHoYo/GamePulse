@@ -44,7 +44,7 @@ func CreatePost(p *models.Post) error {
 // GetPostByID 根据id查询单个帖子数据
 func GetPostByID(pid int64) (post *models.Post, err error) {
 	post = new(models.Post)
-	sqlStr := `select post_id, title, content, author_id, community_id, image_url, create_time from post where post_id = $1`
+	sqlStr := `select post_id, title, content, author_id, community_id, image_url, create_time from post where post_id = $1 and status = 1`
 	err = db.Get(post, sqlStr, pid)
 	return post, err
 }
