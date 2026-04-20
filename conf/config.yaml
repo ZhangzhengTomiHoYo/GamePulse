@@ -37,3 +37,10 @@ minio:
   secret_key: "password123"
   use_ssl: false
   bucket_name: "gamepulse"
+
+
+llm:
+  api_key: "<Input your key>"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "qwen3.6-plus"
+  timeout_seconds: 30
