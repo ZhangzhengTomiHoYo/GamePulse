@@ -1,285 +1,407 @@
-# GamePulse 项目文档（Bluebell）
+# GamePulse 项目文档
 
-文档版本：v1.0  
-整理时间：2026-03-16  
-项目路径：`e:\BaiduSyncdisk\Golang\GamePulse\Project\GamePulse`
+更新时间：2026-04-21  
+适用代码基线：当前仓库源码  
+项目路径：`E:\BaiduSyncdisk\Golang\GamePulse\Project\GamePulse`
 
-## 1. 项目概览
+## 1. 项目定位
 
-`GamePulse`（代码模块名 `bluebell`）是一个基于 Go + Gin 的社区帖子系统后端项目，提供用户注册登录、社区查询、帖子发布、帖子列表查询（按时间/分数排序）和投票能力，并集成了 Swagger 文档、pprof、结构化日志、JWT 鉴权、Redis 缓存与排序。
+`GamePulse` 的 Go 模块名是 `bluebell`。这是一个按 CLD 思路组织的社区项目：
 
-项目核心目标是实现一个典型的论坛/社区后端分层架构：
+- `Controller` 负责 HTTP 参数绑定、鉴权上下文读取和统一响应
+- `Logic` 负责业务编排
+- `DAO` 负责 PostgreSQL、Redis、MinIO 等底层数据访问
 
-- `controller` 负责 HTTP 参数校验与响应
-- `logic` 负责业务编排
-- `dao/mysql` 负责持久化
-- `dao/redis` 负责缓存、排序和投票计分
+当前代码已经实现的是“游戏社区 / 游戏博客”的主体能力，并且已经接入了异步舆情分析与向量化能力：
 
-## 2. 功能清单
+- 发帖成功后，异步调用 LLM 生成帖子分析结果
+- 发帖成功后，异步生成 embedding 并写入 Milvus
+- 帖子详情和列表接口会附带 `sentiment_label`
+
+但“舆情监控”仍未完全发展成独立产品能力，目前更准确的状态是：
+
+- 情感分析已经落地到发帖后的异步处理链路
+- Milvus 向量检索基础设施已经接入
+- 对外的相似搜索 / 语义召回接口还没有暴露
+- 定时监控、告警、看板类能力还没有形成闭环
+
+## 2. 当前实现状态
+
+### 已实现的后端能力
 
 - 用户注册：`POST /api/v1/signup`
 - 用户登录：`POST /api/v1/login`
-- 社区列表：`GET /api/v1/community`（需登录）
-- 社区详情：`GET /api/v1/community/:id`（需登录）
-- 创建帖子：`POST /api/v1/post`（需登录）
-- 帖子详情：`GET /api/v1/post/:id`（需登录）
-- 帖子列表（旧版）：`GET /api/v1/posts`（需登录）
-- 帖子列表（新版，支持排序/按社区筛选）：`GET /api/v1/posts2`（需登录）
-- 帖子投票：`POST /api/v1/vote`（需登录）
-- 其他：`GET /ping`、`GET /swagger/*any`、`GET /`（前端静态入口）
+- 社区列表：`GET /api/v1/community`
+- 社区详情：`GET /api/v1/community/:id`
+- 发帖：`POST /api/v1/post`
+- 删帖：`DELETE /api/v1/post/:id`
+- 帖子详情：`GET /api/v1/post/:id`
+- 帖子列表（旧版）：`GET /api/v1/posts`
+- 帖子列表（新版，支持按时间或热度排序、按社区筛选）：`GET /api/v1/posts2`
+- 帖子投票：`POST /api/v1/vote`
+- 图片上传：`POST /api/v1/upload`
+- 诊断与文档：`GET /ping`、`GET /swagger/*any`、`pprof`
 
-## 3. 技术栈与依赖
+除注册和登录外，其余业务接口都挂在 JWT 中间件之后。
 
-- 语言与运行时：Go `1.25`
-- Web 框架：`gin-gonic/gin`
-- 配置：`spf13/viper`
-- 日志：`zap` + `lumberjack`（按大小滚动）
-- 数据库：MySQL（`sqlx` + `go-sql-driver/mysql`）
-- 缓存：Redis（`go-redis`）
-- 鉴权：JWT（`dgrijalva/jwt-go`）
-- ID 生成：Snowflake（`bwmarrin/snowflake`）
-- 文档：Swagger（`swaggo/gin-swagger`）
-- 运维调试：`gin-contrib/pprof`
-- 限流：`juju/ratelimit`
+### 已实现的 AI / 分析链路
 
-## 4. 项目目录说明
+- 发帖后异步舆情分析：`controllers.CreatePostHandler -> logic.AnalyzePostAsync -> logic.analyzeAndSavePost -> pgsql.UpsertPostAnalysis`
+- 发帖后异步向量化：`controllers.CreatePostHandler -> logic.EmbedPostAsync -> logic.embedAndSavePost -> milvus.UpsertSinglePostVector`
+- 帖子详情和列表附带情绪标签：`logic.attachPostAnalysis`
+- 服务启动时自动初始化 Milvus，并在需要时创建数据库、集合和索引：`main.go -> dao/milvus.Init -> dao/milvus.EnsureCollection`
 
-- `main.go`：应用启动入口，初始化配置、日志、MySQL、Redis、Snowflake、翻译器和路由
-- `conf/config.yaml`：项目配置
-- `routes/`：路由注册与全局中间件
-- `controllers/`：HTTP 接口层
-- `logic/`：业务逻辑层
-- `dao/mysql/`：MySQL 数据访问
-- `dao/redis/`：Redis 数据访问与投票排序
-- `models/`：请求/响应模型与数据库结构定义
-- `middlewares/`：JWT 鉴权、限流中间件
-- `pkg/`：通用组件（JWT、Snowflake）
-- `setting/`：配置加载
-- `logger/`：日志初始化和 Gin 日志/恢复中间件
-- `docs/`：Swagger 产物
-- `templates/` + `assets/`：前端静态资源
-- `Dockerfile`、`docker-compose.yml`、`wait-for.sh`：容器化与启动编排
+### 已接好的前端页面
 
-## 5. 架构设计
+- 登录 / 注册页：`frontend/src/views/LoginView.vue`
+- 首页 feed：`frontend/src/views/HomeView.vue`
+- 发帖页：`frontend/src/views/CreatePostView.vue`
+- 帖子详情页：`frontend/src/views/PostDetailView.vue`
 
-### 5.1 分层架构
+### 尚未形成完整闭环的目标能力
 
-请求链路：
+- 评论系统
+- 对外可用的 Milvus 相似搜索接口
+- 定时化舆情监控任务流
+- 告警、聚合报表和看板
 
-`Gin Router -> Middleware -> Controller -> Logic -> DAO(MySQL/Redis) -> Response`
+也就是说，“分析”已经不是纯规划，但“监控平台化”还没有完成。
 
-职责边界：
+## 3. 技术栈
 
-- Controller：参数绑定、基础校验、统一返回格式
-- Logic：组合查询、业务规则、异常映射
-- DAO：单一数据源读写
-
-### 5.2 中间件
-
-- 日志中间件：记录请求路径、状态码、耗时、UA、IP
-- Recovery 中间件：捕获 panic，防止进程崩溃
-- 全局限流：令牌桶，容量 100，每秒补充（全局共享，不区分用户）
-- JWT 鉴权：校验 `Authorization: Bearer <token>`，解析后将 `userID` 写入上下文
-
-## 6. 配置说明（`conf/config.yaml`）
-
-### 6.1 基础配置
-
-- `name`: 项目名（`bluebell`）
-- `mode`: 运行模式（`dev`/`release`）
-- `port`: 服务端口（默认 `8080`）
-- `version`: 版本号
-- `start_time`: Snowflake 起始时间（格式 `YYYY-MM-DD`）
-- `machine_id`: Snowflake 节点 ID
-
-### 6.2 鉴权配置
-
-- `auth.jwt_expire`: JWT 过期小时数（默认 `8760` 小时，约 1 年）
-
-### 6.3 日志配置
-
-- `log.level`: 日志级别
-- `log.filename`: 日志文件名
-- `log.max_size`: 单文件最大 MB
-- `log.max_age`: 保留天数
-- `log.max_backups`: 备份数
-
-### 6.4 数据源配置
-
-- MySQL：`host`、`port`、`user`、`password`、`dbname`、连接池参数
-- Redis：`host`、`port`、`password`、`db`、`pool_size`
-
-## 7. 数据模型与存储设计
-
-### 7.1 MySQL 表
-
-定义文件：`models/create_table.sql`
-
-- `user`：用户信息（`user_id`、`username`、`password` 等）
-- `community`：社区分类（`community_id`、`community_name`、`introduction`）
-- `post`：帖子信息（`post_id`、`title`、`content`、`author_id`、`community_id`）
-
-说明：
-
-- 用户密码存储为 `md5(secret + password)` 形式（当前实现）
-- `post_id`、`user_id` 为业务主键（Snowflake）
-
-### 7.2 Redis Key 设计
-
-键前缀：`bluebell:`
-
-- `post:time`（ZSet）：帖子发布时间排序
-- `post:score`（ZSet）：帖子热度分数排序
-- `post:voted:{postID}`（ZSet）：某帖子下用户投票记录（member=userID，score=1/0/-1）
-- `community:{communityID}`（Set）：某社区的帖子 ID 集合
-
-社区排序查询时会构造临时 ZSet（TTL 60 秒），用于社区集合与排序集合交集计算。
-
-## 8. API 说明
-
-基础路径：`/api/v1`  
-统一响应结构：
-
-```json
-{
-  "code": 1000,
-  "msg": "success",
-  "data": {}
-}
-```
-
-### 8.1 错误码
-
-- `1000`：成功
-- `1001`：参数错误
-- `1002`：用户已存在
-- `1003`：用户不存在
-- `1004`：用户名或密码错误
-- `1005`：服务繁忙
-- `1006`：无效 Token
-- `1007`：需要登录
-
-### 8.2 无需登录接口
-
-- `POST /signup`：注册
-- `POST /login`：登录
-
-### 8.3 需登录接口
-
-请求头统一：
-
-`Authorization: Bearer <token>`
-
-- `GET /community`：社区列表
-- `GET /community/:id`：社区详情
-- `POST /post`：发帖
-- `GET /post/:id`：帖子详情
-- `GET /posts`：旧版分页列表
-- `GET /posts2`：新版分页列表（`page`、`size`、`order`、`community_id`）
-- `POST /vote`：投票（`post_id`，`direction` 为 `1/0/-1`）
-
-## 9. 核心业务流程
-
-### 9.1 注册流程
-
-1. Controller 绑定 `username/password/re_password`
-2. Logic 检查用户是否存在
-3. Snowflake 生成用户 ID
-4. DAO 写入 MySQL（密码加密后入库）
-
-### 9.2 登录流程
-
-1. MySQL 查询用户
-2. 校验密码
-3. 生成 JWT（包含 `user_id` 和 `username`）
-4. 返回 token 给客户端
-
-### 9.3 发帖流程
-
-1. 鉴权中间件解析用户身份
-2. 生成 `post_id`
-3. 写入 MySQL
-4. 写入 Redis 排序集合（时间/分数）并加入社区集合
-
-### 9.4 帖子列表流程（`/posts2`）
-
-1. 根据 `order` 决定 Redis 排序 key（时间或分数）
-2. 读取分页帖子 ID（Redis）
-3. 按 ID 顺序回源 MySQL 查询帖子详情
-4. 批量查询投票统计（Redis pipeline）
-5. 聚合作者、社区、投票数并返回
-
-### 9.5 投票流程
-
-1. 校验帖子发布时间是否超过 1 周
-2. 读取用户历史投票值
-3. 按 `diff * scorePerVote(432)` 更新帖子分数
-4. 更新或删除用户投票记录（方向 0 表示取消）
-
-## 10. 本地运行指南
-
-### 10.1 开发环境
+### 后端
 
 - Go `1.25`
-- MySQL `8.0`
-- Redis 最新版
+- `gin-gonic/gin`
+- `jmoiron/sqlx`
+- PostgreSQL 驱动：`lib/pq`
+- Redis：`go-redis`
+- MinIO：`minio-go/v7`
+- Milvus：`milvus-io/milvus/client/v2`
+- JWT：`dgrijalva/jwt-go`
+- 配置：`viper`
+- 日志：`zap` + `lumberjack`
+- 文档：`swaggo/gin-swagger`
+- 调试：`gin-contrib/pprof`
+- 限流：`juju/ratelimit`
 
-### 10.2 启动步骤（推荐）
+### AI / 分析链路
 
-1. 启动依赖：
-`docker compose up -d mysql redis`
-2. 初始化数据库结构：
-执行 `models/create_table.sql`
-3. 根据运行环境修改 `conf/config.yaml`（本机运行通常将 `mysql/redis` 主机改为 `127.0.0.1`）
-4. 启动应用：
-`go run .`
+- LLM 调用：`cloudwego/eino-ext/components/model/openai`
+- Embedding：`cloudwego/eino-ext/components/embedding/dashscope`
+- 向量检索：Milvus
+- 结构化分析落库：PostgreSQL `post_analysis`
 
-访问地址：
+### 前端
 
-- API：`http://localhost:8080`
-- Swagger：`http://localhost:8080/swagger/index.html`
-- pprof：`http://localhost:8080/debug/pprof`
+- Vue 3
+- Vite
+- Element Plus
+- axios
+- vue-router
 
-### 10.3 容器化运行
+## 4. 代码结构
 
-项目提供 `Dockerfile` 与 `docker-compose.yml`，应用映射端口为 `8888:8080`。
+### 后端主干
 
-## 11. 测试现状
+- `main.go`
+  负责初始化配置、日志、PostgreSQL、Redis、MinIO、Snowflake、校验器翻译器，并启动 HTTP 服务。
 
-执行时间：2026-03-16  
-执行命令：`go test ./...`
+- `routes/routes.go`
+  注册所有路由、中间件、Swagger 和 pprof。
 
-结果摘要：
+- `controllers/`
+  接收请求、校验参数、调用 logic、输出统一响应。
 
-- `controllers` 包测试通过
-- `dao/mysql` 包测试失败，原因是本地 `127.0.0.1:3306` 不可达（测试初始化阶段直接连接数据库）
-- 其余包无测试文件或通过
+- `logic/`
+  聚合数据库、缓存和对象存储操作，封装业务流程。
 
-结论：
+- `dao/pgsql/`
+  PostgreSQL 数据访问层。
 
-- 当前项目具备基础测试，但依赖真实 MySQL，尚未做测试隔离
+- `dao/redis/`
+  排序、社区帖子集合、投票记录、缓存清理。
 
-## 12. 已知问题与风险
+- `dao/minio/`
+  MinIO 初始化和文件上传。
 
-- `init.sql` 仅创建数据库与 root 认证方式，不会创建业务表；首次运行仍需手动执行 `models/create_table.sql`
-- `wait-for.sh` 中存在 `local all_ready=1`（在函数外使用 local），在部分 `/bin/sh` 环境可能报错
-- `controllers/vote.go` 参数校验失败后有一个分支未 `return`，会继续执行后续逻辑
-- 密码算法使用 MD5 + 固定盐，安全性不足，不适合生产
-- JWT 密钥写死在代码中，建议改为配置或密钥管理服务
-- 仓库包含大体积日志文件（`web_app.log`、`web_app-*.log`），建议加入 `.gitignore` 并清理
+- `dao/milvus/`
+  Milvus 初始化、集合校验、索引创建、向量写入与相似检索基础能力。
 
-## 13. 优化建议（按优先级）
+- `models/`
+  请求参数结构、数据库模型、接口响应模型、建表 SQL。
 
-1. 修复启动与稳定性问题：完善 `init.sql` 表结构初始化，修复 `wait-for.sh` 兼容性
-2. 修复业务逻辑瑕疵：补充 `PostVoteController` 参数错误后的 `return`
-3. 增强安全性：升级密码哈希（`bcrypt/argon2`），将 JWT 密钥外置化
-4. 测试改造：为 DAO 增加可替换数据源或测试容器，减少对本地环境耦合
-5. 工程治理：补全 README、清理日志产物、增加 CI（`go test` + `go vet` + lint）
+- `middlewares/`
+  JWT 鉴权和全局限流。
 
-## 14. 维护建议
+- `pkg/`
+  通用能力，目前主要是 JWT 和 Snowflake。
 
-- 新增接口时保持 `controller -> logic -> dao` 分层，不跨层调用
-- Redis key 统一通过 `getRedisKey` 组装，避免硬编码
-- 变更配置字段时同步更新 `setting/AppConfig` 和 `conf/config.yaml`
-- 更新 Swagger 后同步提交 `docs/swagger.yaml` 与 `docs/swagger.json`
+- `logic/llm.go`
+  发帖后的异步舆情分析流程。
 
+- `logic/embed.go`
+  发帖后的异步 embedding 生成与 Milvus upsert 流程。
+
+### 前端主干
+
+- `frontend/src/main.js`
+  Vue 应用入口。
+
+- `frontend/src/router/index.js`
+  前端页面路由。
+
+- `frontend/src/api/post.js`
+  发帖、删帖、上传图片相关接口封装。
+
+- `frontend/src/views/`
+  页面组件源码。
+
+### 构建产物与非源码目录
+
+- `frontend/dist/`：前端构建输出
+- `assets/`、`templates/index.html`：后端直接提供的前端静态资源
+- `docs/swagger.json`、`docs/swagger.yaml`：Swagger 生成产物
+- `tmp/`、`web_app.log`：运行产物
+
+阅读和修改业务代码时，优先看 `frontend/src/`，不要把根目录下的静态构建产物当成源码。
+
+## 5. 请求链路与分层职责
+
+请求的主链路是：
+
+`Router -> Middleware -> Controller -> Logic -> DAO -> Storage`
+
+职责分工如下：
+
+- `Controller`
+  负责绑定请求参数、读取当前用户 ID、返回统一 JSON 结构。
+
+- `Logic`
+  负责把多个 DAO 调用串起来，完成业务编排。
+
+- `DAO`
+  负责访问具体的数据源，不承载上层业务流程。
+
+一个典型例子是发帖：
+
+1. `routes/routes.go` 注册 `/api/v1/post`
+2. `controllers.CreatePostHandler` 绑定参数并组装 `models.Post`
+3. `logic.CreatePost` 生成帖子 ID
+4. `dao/pgsql.CreatePost` 写入 PostgreSQL
+5. `dao/redis.CreatePost` 刷新排序和社区集合
+
+## 6. 关键业务说明
+
+### 认证
+
+- 登录成功后返回 `token`
+- 业务接口要求请求头携带：`Authorization: Bearer <token>`
+- JWT 中间件位于 `middlewares/auth.go`
+- token 的生成和解析位于 `pkg/jwt/jwt.go`
+
+### 帖子
+
+- 帖子主数据存储在 PostgreSQL
+- 帖子图片 URL 以 JSON 字符串形式存储在 `post.image_url`
+- 返回给前端时，会在 logic 层反序列化成 `image_urls`
+- 删除帖子采用软删除，且会同步清理 Redis 相关缓存
+- 发帖成功后不会阻塞等待 AI 分析结果，而是异步触发分析和 embedding
+
+### 排序与投票
+
+- Redis 使用有序集合维护按时间和按热度排序的帖子列表
+- 社区筛选通过社区集合与排序集合做交集
+- 投票数据也保存在 Redis 中
+- 帖子详情和列表会聚合 PostgreSQL 的帖子数据与 Redis 的投票数据
+
+### 图片上传
+
+- 上传入口是 `POST /api/v1/upload`
+- 逻辑层会校验扩展名白名单
+- 实际文件保存到 MinIO
+- 返回前端的是可公开访问的 URL
+
+### 异步舆情分析
+
+- 触发点：`controllers.CreatePostHandler`
+- 模型调用封装在 `logic/llm.go`
+- 结果落到 PostgreSQL 的 `post_analysis`
+- 列表和详情接口会把 `sentiment_label` 挂回 `ApiPostDetail`
+
+### 向量化与 Milvus
+
+- 触发点：`controllers.CreatePostHandler`
+- Embedding 生成封装在 `logic/embed.go`
+- 当前配置使用 DashScope embedding，维度是 `1024`
+- 向量写入 Milvus 集合，当前默认集合名是 `post_vectors`
+- Milvus 侧已经有 `SearchSimilar` 基础能力，但当前没有 route/controller 暴露该能力
+
+## 7. 数据存储
+
+### PostgreSQL
+
+当前实际代码使用的是 PostgreSQL，不是 MySQL。
+
+关键表：
+
+- `"user"`：用户
+- `community`：社区
+- `post`：帖子
+- `post_analysis`：帖子分析结果
+- `post_embeddings`：帖子 embedding 分块表
+
+表结构参考：
+
+- `models/create_table_pgsql.sql`
+
+注意点：
+
+- 用户密码当前仍使用 `md5(secret + password)` 方式处理，仅适合学习和演示，不适合生产
+- `post_analysis` 当前已经在实际业务链路中被写入和读取
+- `post_embeddings` 的表结构和 DAO 已存在，但当前主流程里的 embedding 写入目标是 Milvus，不是这张表
+- `models/create_table_pgsql.sql` 里 `post_embeddings.embedding` 使用 `VECTOR(1536)`，而当前 `embedding` 和 `milvus` 配置维度是 `1024`，两者并不一致
+
+### Redis
+
+Redis 主要承担：
+
+- 帖子时间排序
+- 帖子热度排序
+- 社区帖子集合
+- 单帖投票记录
+
+### MinIO
+
+MinIO 负责帖子图片上传，配置位于 `conf/config.yaml` 的 `minio` 段。
+
+### Milvus
+
+Milvus 是当前实际接入的向量数据库，负责帖子向量写入和相似检索基础能力。
+
+当前代码中的 Milvus 特点：
+
+- 启动时尝试初始化
+- 自动校验数据库与集合是否存在
+- 自动创建向量索引和标量索引
+- 发帖后异步 upsert 向量
+- 暂未对外暴露检索接口
+
+## 8. 配置说明
+
+配置文件：
+
+- `conf/config.yaml`
+
+当前代码实际读取的配置包括：
+
+- `name`
+- `mode`
+- `port`
+- `version`
+- `start_time`
+- `machine_id`
+- `log`
+- `postgres`
+- `redis`
+- `minio`
+- `llm`
+- `milvus`
+- `embedding`
+
+其中数据源已经是：
+
+- PostgreSQL
+- Redis
+- MinIO
+- Milvus
+
+## 9. 本地运行建议
+
+### 依赖
+
+后端当前依赖以下服务：
+
+- PostgreSQL
+- Redis
+- MinIO
+- Milvus
+
+### 初始化
+
+1. 准备 PostgreSQL、Redis、MinIO、Milvus
+2. 在 PostgreSQL 中执行 `models/create_table_pgsql.sql`
+3. 根据本机环境修改 `conf/config.yaml`
+4. 为 `llm` 和 `embedding` 配置可用的 API Key
+5. 启动后端：`go run .`
+
+### 前端开发
+
+1. 进入 `frontend/`
+2. 安装依赖：`npm install`
+3. 启动开发服务：`npm run dev`
+
+开发模式下，`frontend/vite.config.js` 会把 `/api` 请求代理到 `http://localhost:8080`。
+
+补充说明：
+
+- 如果 Milvus 初始化失败，服务目前会记录 `warn` 并继续启动
+- 这意味着基础社区功能仍可运行，但 embedding / 语义检索相关能力会降级
+
+## 10. 当前文档与代码的已知偏差
+
+以下内容在仓库中仍然存在，但与当前代码不完全一致：
+
+- 旧版文档里仍有 MySQL 相关描述
+- `docker-compose.yml` 仍保留 `mysql` 服务定义，尚未跟上 PostgreSQL、MinIO、Milvus 的当前方案
+- 根目录 `README.md` 原本几乎为空
+
+因此在判断系统真实状态时，优先级建议为：
+
+1. `go.mod`
+2. `main.go`
+3. `routes/routes.go`
+4. `setting/setting.go`
+5. 对应的 controller / logic / dao 文件
+6. `conf/config.yaml`
+7. 再参考本文档和 Swagger
+
+## 11. 已知问题与风险
+
+- `controllers/vote.go` 在参数校验失败后的一个分支缺少 `return`
+- 密码算法仍使用 MD5 + 固定盐
+- JWT 密钥写死在代码里
+- `docker-compose.yml` 仍未和当前 PostgreSQL / MinIO / Milvus 方案完全对齐
+- 仓库里保留了较多构建产物和日志产物，容易干扰阅读
+- 终端中部分中文注释和字符串可能出现乱码显示，这更像是控制台编码问题，不一定是源码本身损坏
+- Milvus 已接入但暂未暴露 controller / route 级的相似检索接口
+- PostgreSQL `post_embeddings` 表结构维度是 `1536`，而当前 embedding / Milvus 配置维度是 `1024`
+- `dao/pgsql/post_embedding.go` 已存在，但当前活跃的 embedding 主链路并没有写这张表
+
+## 12. 阅读建议
+
+### 想快速理解项目时
+
+按下面顺序读：
+
+1. `main.go`
+2. `setting/setting.go`
+3. `conf/config.yaml`
+4. `routes/routes.go`
+5. 再进入具体功能对应的 `controllers/`、`logic/`、`dao/`
+
+### 想改某个功能时
+
+优先沿着这条线找：
+
+`路由 -> controller -> logic -> dao -> models -> 前端页面/接口`
+
+### 想判断某个功能是否真的实现时
+
+同时确认下面三件事：
+
+1. 有没有路由或前端入口
+2. 有没有 logic 层编排
+3. 有没有真实数据源写入或读取
+
+只有整条链路都存在，才算真正实现。
