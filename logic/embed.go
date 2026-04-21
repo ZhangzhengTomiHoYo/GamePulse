@@ -8,6 +8,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,11 +24,11 @@ func EmbedPostAsync(post *models.Post) error {
 	if strings.TrimSpace(post.Title) == "" && strings.TrimSpace(post.Content) == "" {
 		return errors.New("post title and content are empty")
 	}
-	if setting.Conf == nil || setting.Conf.LLMConfig == nil {
-		return errors.New("llm config not initialized")
+	if setting.Conf == nil || setting.Conf.EmbeddingConfig == nil {
+		return errors.New("embedding config not initialized")
 	}
-	if strings.TrimSpace(setting.Conf.LLMConfig.APIKey) == "" {
-		return errors.New("llm api key is empty")
+	if strings.TrimSpace(setting.Conf.EmbeddingConfig.APIKey) == "" {
+		return errors.New("embedding api key is empty")
 	}
 
 	postID := post.ID
@@ -56,7 +57,10 @@ func embedAndSavePost(postID int64, communityID int64, title string, content str
 
 	vectors, err := embedder.EmbedStrings(ctx, []string{title + content})
 	if err != nil {
-		zap.L().Error("EmbedStrings of DashScope failed, err=%v", zap.Error(err))
+		return fmt.Errorf("embed strings failed: %w", err)
+	}
+	if len(vectors) == 0 {
+		return errors.New("embedding returned empty vectors")
 	}
 
 	// 2. 核心：类型转换！[][]float64 → [][]float32
@@ -99,16 +103,25 @@ func embedAndSavePost(postID int64, communityID int64, title string, content str
 }
 
 func qwenEmbedding(ctx context.Context) (eb embedding.Embedder, err error) {
-	model := setting.Conf.EmbeddingConfig.Model
-	api_key := setting.Conf.EmbeddingConfig.APIKey
-	timeout := time.Duration(setting.Conf.EmbeddingConfig.TimeoutSeconds) * time.Second
+	if setting.Conf == nil || setting.Conf.EmbeddingConfig == nil {
+		return nil, errors.New("embedding config not initialized")
+	}
+
+	cfg := setting.Conf.EmbeddingConfig
+	if strings.TrimSpace(cfg.APIKey) == "" {
+		return nil, errors.New("embedding api key is empty")
+	}
+
+	model := cfg.Model
+	apiKey := cfg.APIKey
+	timeout := time.Duration(cfg.TimeoutSeconds) * time.Second
 	if timeout <= 0 {
 		timeout = 30 * time.Second
 	}
 	dim := 1024
 	embedder, err := dashscope.NewEmbedder(ctx, &dashscope.EmbeddingConfig{
 		Model:      model,
-		APIKey:     api_key,
+		APIKey:     apiKey,
 		Timeout:    timeout,
 		Dimensions: &dim,
 	})

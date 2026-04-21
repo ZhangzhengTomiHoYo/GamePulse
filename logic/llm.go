@@ -82,17 +82,11 @@ func openAIForQwen(ctx context.Context) (cm model.ToolCallingChatModel, err erro
 		return nil, errors.New("llm api key is empty")
 	}
 
-	timeout := time.Duration(cfg.TimeoutSeconds) * time.Second
-	if timeout <= 0 {
-		timeout = 30 * time.Second
-	}
-
 	temperature := float32(0.2)
 	config := &openai.ChatModelConfig{
 		APIKey:      cfg.APIKey,
 		Model:       cfg.Model,
 		BaseURL:     cfg.BaseURL,
-		Timeout:     timeout,
 		Temperature: &temperature,
 		ResponseFormat: &openai.ChatCompletionResponseFormat{
 			Type: openai.ChatCompletionResponseFormatTypeJSONObject,
@@ -130,6 +124,7 @@ func AnalyzePostAsync(post *models.Post) error {
 				zap.Int64("postID", postID),
 				zap.Int64("communityID", communityID),
 				zap.Error(err))
+			return
 		}
 		zap.L().Info("LLM Sentiment Analyze Success!",
 			zap.Int64("post_id", postID),
@@ -142,25 +137,28 @@ func AnalyzePostAsync(post *models.Post) error {
 }
 
 func analyzeAndSavePost(postID, communityID int64, title, content string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), llmTimeout())
-	defer cancel()
+	timeout := llmTimeout()
+	setupCtx := context.Background()
 
 	community, err := pgsql.GetCommunityDetailByID(communityID)
 	if err != nil {
 		return fmt.Errorf("get community detail failed: %w", err)
 	}
 
-	messages, err := createMessages(ctx, community.Name, title, content)
+	messages, err := createMessages(setupCtx, community.Name, title, content)
 	if err != nil {
 		return fmt.Errorf("create llm messages failed: %w", err)
 	}
 
-	cm, err := openAIForQwen(ctx)
+	cm, err := openAIForQwen(setupCtx)
 	if err != nil {
 		return fmt.Errorf("init llm failed: %w", err)
 	}
 
-	resp, err := cm.Generate(ctx, messages)
+	generateCtx, cancel := context.WithTimeout(setupCtx, timeout)
+	defer cancel()
+
+	resp, err := cm.Generate(generateCtx, messages)
 	if err != nil {
 		zap.L().Error("大模型API调用失败!")
 		return fmt.Errorf("llm generate failed: %w", err)
