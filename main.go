@@ -36,7 +36,6 @@ import (
 
 // @host localhost:8080
 // @BasePath /api/v1
-// main 负责完成配置加载、依赖初始化、路由注册和服务启动。
 func main() {
 	// 1. 加载配置
 	if err := setting.Init(); err != nil {
