@@ -12,17 +12,37 @@ var Conf = new(AppConfig)
 
 // viper的Tag
 type AppConfig struct {
-	Name            string `mapstructure:"name"`
-	Mode            string `mapstructure:"mode"`
-	Version         string `mapstructure:"version"`
-	StartTime       string `mapstructure:"start_time"`
-	MachineID       int64  `mapstructure:"machine_id"`
-	Port            int    `mapstructure:"port"`
-	*LogConfig      `mapstructure:"log"`
-	*PostgresConfig `mapstructure:"postgres"`
-	*RedisConfig    `mapstructure:"redis"`
-	*MinIOConfig    `mapstructure:"minio"` // 【新增】MinIO 配置
-	*LLMConfig      `mapstructure:"llm"`
+	Name             string `mapstructure:"name"`
+	Mode             string `mapstructure:"mode"`
+	Version          string `mapstructure:"version"`
+	StartTime        string `mapstructure:"start_time"`
+	MachineID        int64  `mapstructure:"machine_id"`
+	Port             int    `mapstructure:"port"`
+	*LogConfig       `mapstructure:"log"`
+	*PostgresConfig  `mapstructure:"postgres"`
+	*RedisConfig     `mapstructure:"redis"`
+	*MinIOConfig     `mapstructure:"minio"` // 【新增】MinIO 配置
+	*LLMConfig       `mapstructure:"llm"`
+	*MilvusConfig    `mapstructure:"milvus"`
+	*EmbeddingConfig `mapstructure:"embedding"`
+}
+
+type EmbeddingConfig struct {
+	APIKey         string `mapstructure:"api_key"`
+	BaseURL        string `mapstructure:"base_url"`
+	Model          string `mapstructure:"model"`
+	TimeoutSeconds int    `mapstructure:"timeout_seconds"`
+}
+
+type MilvusConfig struct {
+	Address        string `mapstructure:"address"`
+	Username       string `mapstructure:"username"`
+	Password       string `mapstructure:"password"`
+	DBName         string `mapstructure:"db_name"`
+	CollectionName string `mapstructure:"collection_name"`
+	Dimension      int    `mapstructure:"dimension"`
+	MetricType     string `mapstructure:"metric_type"`
+	IndexType      string `mapstructure:"index_type"`
 }
 
 // 2. 在文件底部定义 MinIOConfig 结构体

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bluebell/controllers"
+	"bluebell/dao/milvus"
 	"bluebell/dao/minio"
 	"bluebell/dao/pgsql"
 	"bluebell/dao/redis"
@@ -35,6 +36,7 @@ import (
 
 // @host localhost:8080
 // @BasePath /api/v1
+// main 负责完成配置加载、依赖初始化、路由注册和服务启动。
 func main() {
 	// 1. 加载配置
 	if err := setting.Init(); err != nil {
@@ -73,6 +75,18 @@ func main() {
 		return
 	}
 	// minio是无状态HTTP客户端 不需要defer关闭连接
+
+	// 【新增】：初始化 Milvus
+	if setting.Conf.MilvusConfig != nil {
+		if err := milvus.Init(setting.Conf.MilvusConfig); err != nil {
+			zap.L().Warn("init milvus failed", zap.Error(err))
+		} else if err := milvus.EnsureCollection(setting.Conf.MilvusConfig); err != nil {
+			zap.L().Warn("ensure milvus collection failed", zap.Error(err))
+			milvus.Close()
+		} else {
+			defer milvus.Close()
+		}
+	}
 
 	// 雪花算法生成id
 	if err := snowflake.Init(setting.Conf.StartTime, setting.Conf.MachineID); err != nil {

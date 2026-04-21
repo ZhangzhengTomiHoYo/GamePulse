@@ -143,6 +143,11 @@ func CreatePostHandler(c *gin.Context) {
 		zap.L().Warn("logic.AnalyzePostAsync(post) failed", zap.Error(err))
 	}
 
+	// 5. 异步调用嵌入模型对帖子进行向量化
+	if err := logic.EmbedPostAsync(post); err != nil {
+		zap.L().Warn("logic.EmbedPostAsync(post) failed", zap.Error(err))
+	}
+
 	// 5. 返回响应
 	ResponseSuccess(c, nil)
 }

@@ -40,7 +40,23 @@ minio:
 
 
 llm:
-  api_key: "<Input your key>"
+  api_key: "sk-"
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   model: "qwen3.6-plus"
+  timeout_seconds: 30
+
+milvus:
+  address: "127.0.0.1:19530"
+  username: ""
+  password: ""
+  db_name: "default"
+  collection_name: "post_vectors"
+  dimension: 1024
+  metric_type: "COSINE"
+  index_type: "HNSW"
+
+embedding:
+  api_key: "sk-"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "text-embedding-v4"
   timeout_seconds: 30
