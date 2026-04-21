@@ -131,8 +131,13 @@ func AnalyzePostAsync(post *models.Post) error {
 				zap.Int64("communityID", communityID),
 				zap.Error(err))
 		}
+		zap.L().Info("LLM Sentiment Analyze Success!",
+			zap.Int64("post_id", postID),
+		)
 	}()
-
+	zap.L().Info("LLM analyze task submitted to async goroutine",
+		zap.Int64("post_id", postID),
+	)
 	return nil
 }
 
@@ -157,6 +162,7 @@ func analyzeAndSavePost(postID, communityID int64, title, content string) error 
 
 	resp, err := cm.Generate(ctx, messages)
 	if err != nil {
+		zap.L().Error("大模型API调用失败!")
 		return fmt.Errorf("llm generate failed: %w", err)
 	}
 	if resp == nil {

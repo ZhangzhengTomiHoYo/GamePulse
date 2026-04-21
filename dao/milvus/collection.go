@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/milvus-io/milvus/client/v2/entity"
 	"github.com/milvus-io/milvus/client/v2/index"
@@ -39,7 +40,7 @@ func EnsureCollection(cfg *setting.MilvusConfig) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultInitTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := ensureDatabase(ctx, cli, normalizedDBName(cfg)); err != nil {

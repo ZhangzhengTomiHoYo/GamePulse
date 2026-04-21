@@ -118,6 +118,73 @@ func UpsertPostVectors(ctx context.Context, records []*VectorRecord) error {
 	return nil
 }
 
+// UpsertSinglePostVector 单条写入或覆盖帖子向量记录
+func UpsertSinglePostVector(ctx context.Context, record *VectorRecord) error {
+	// 1. 基础校验（和批量版完全一致）
+	if record == nil {
+		return errors.New("vector record is nil")
+	}
+	if cli == nil {
+		return errors.New("milvus client is not initialized")
+	}
+	if setting.Conf == nil || setting.Conf.MilvusConfig == nil {
+		return errors.New("milvus config is not initialized")
+	}
+
+	cfg := setting.Conf.MilvusConfig
+	if cfg.Dimension <= 0 {
+		return errors.New("milvus dimension must be greater than 0")
+	}
+
+	// 2. 单条记录合法性校验（移除循环，直接校验）
+	if record.PostID <= 0 {
+		return fmt.Errorf("vector record has invalid post_id: %d", record.PostID)
+	}
+	if len(record.Embedding) != cfg.Dimension {
+		return fmt.Errorf("vector record embedding dim %d, want %d", len(record.Embedding), cfg.Dimension)
+	}
+
+	modelName := strings.TrimSpace(record.ModelName)
+	if modelName == "" {
+		return errors.New("vector record has empty model_name")
+	}
+
+	// 时间零值兜底
+	createTime := record.PostCreateTime
+	if createTime.IsZero() {
+		createTime = time.Now()
+	}
+
+	// 3. 超时控制（复用原有逻辑）
+	ctx, cancel := withTimeout(ctx, defaultRequestTimeout)
+	defer cancel()
+
+	// 4. 构造单列数据（Milvus 列插入必须传切片，单条就是长度1的切片）
+	postIDs := []int64{record.PostID}
+	communityIDs := []int64{record.CommunityID}
+	postCreateTS := []int64{createTime.UnixMilli()}
+	modelNames := []string{modelName}
+	modelVersions := []string{strings.TrimSpace(record.ModelVersion)}
+	contentHashes := []string{strings.TrimSpace(record.ContentHash)}
+	embeddings := [][]float32{record.Embedding}
+
+	// 5. 执行 Upsert（和批量版逻辑完全一致）
+	_, err := cli.Upsert(ctx, milvusclient.NewColumnBasedInsertOption(normalizedCollectionName(cfg)).
+		WithInt64Column(fieldPostID, postIDs).
+		WithInt64Column(fieldCommunityID, communityIDs).
+		WithInt64Column(fieldPostCreateTS, postCreateTS).
+		WithVarcharColumn(fieldModelName, modelNames).
+		WithVarcharColumn(fieldModelVersion, modelVersions).
+		WithVarcharColumn(fieldContentHash, contentHashes).
+		WithFloatVectorColumn(fieldEmbedding, cfg.Dimension, embeddings),
+	)
+	if err != nil {
+		return fmt.Errorf("upsert single milvus vector failed: %w", err)
+	}
+
+	return nil
+}
+
 // DeletePostVectors 按帖子 ID 删除其在 Milvus 中的向量记录。
 func DeletePostVectors(ctx context.Context, postID int64) error {
 	if postID <= 0 {
