@@ -2,9 +2,10 @@ package milvus
 
 import (
 	"bluebell/setting"
-	"errors"
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/milvus-io/milvus/client/v2/milvusclient"
 	"go.uber.org/zap"
@@ -14,14 +15,6 @@ var cli *milvusclient.Client
 
 // Init 初始化 Milvus 客户端连接。
 func Init(cfg *setting.MilvusConfig) (err error) {
-	if err = validateConfig(cfg); err != nil {
-		return err
-	}
-
-	if cli != nil {
-		Close()
-	}
-
 	ctx, cancel := withTimeout(nil, defaultInitTimeout)
 	defer cancel()
 

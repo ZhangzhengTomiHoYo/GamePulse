@@ -148,7 +148,7 @@ func CreatePostHandler(c *gin.Context) {
 		zap.L().Warn("logic.EmbedPostAsync(post) failed", zap.Error(err))
 	}
 
-	// 5. 返回响应
+	// 6. 返回响应
 	ResponseSuccess(c, nil)
 }
 
