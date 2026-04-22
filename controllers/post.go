@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"bluebell/logic"
-	"bluebell/models"
 	"encoding/json"
+	"gamepulse/logic"
+	"gamepulse/models"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

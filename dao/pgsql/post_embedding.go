@@ -1,6 +1,6 @@
 package pgsql
 
-import "bluebell/models"
+import "gamepulse/models"
 
 // GetPostEmbeddingsByPostID 查询某篇帖子的全部向量分片。
 func GetPostEmbeddingsByPostID(postID int64) (embeddings []*models.PostEmbedding, err error) {

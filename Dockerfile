@@ -13,7 +13,7 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-RUN go build -o bluebell_app .
+RUN go build -o gamepulse_app .
 
 # 运行阶段
 FROM debian:bookworm-slim
@@ -26,7 +26,7 @@ COPY ./templates /templates
 COPY ./assets /assets
 COPY ./conf /conf
 
-COPY --from=builder /build/bluebell_app /
+COPY --from=builder /build/gamepulse_app /
 
 # 核心修正：增加 sed -i 这一行，强制把 windows 换行符转为 linux 换行符
 RUN set -eux; \

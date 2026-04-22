@@ -1,8 +1,8 @@
 package pgsql
 
 import (
-	"bluebell/models"
-	"bluebell/setting"
+	"gamepulse/models"
+	"gamepulse/setting"
 	"testing"
 	"time"
 )

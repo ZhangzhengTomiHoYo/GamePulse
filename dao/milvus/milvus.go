@@ -1,9 +1,9 @@
 package milvus
 
 import (
-	"bluebell/setting"
 	"context"
 	"fmt"
+	"gamepulse/setting"
 	"strings"
 	"time"
 

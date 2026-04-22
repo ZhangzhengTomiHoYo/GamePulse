@@ -1,8 +1,8 @@
 package pgsql
 
 import (
-	"bluebell/models"
 	"errors"
+	"gamepulse/models"
 	"strconv"
 
 	"github.com/lib/pq"

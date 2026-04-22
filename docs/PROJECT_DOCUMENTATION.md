@@ -6,7 +6,7 @@
 
 ## 1. 项目定位
 
-`GamePulse` 的 Go 模块名是 `bluebell`。这是一个按 CLD 思路组织的社区项目：
+`GamePulse` 的 Go 模块名是 `gamepulse`。这是一个按 CLD 思路组织的社区项目：
 
 - `Controller` 负责 HTTP 参数绑定、鉴权上下文读取和统一响应
 - `Logic` 负责业务编排

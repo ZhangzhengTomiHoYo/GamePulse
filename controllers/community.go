@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"bluebell/logic"
+	"gamepulse/logic"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

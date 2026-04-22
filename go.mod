@@ -1,4 +1,4 @@
-module bluebell
+module gamepulse
 
 go 1.25
 

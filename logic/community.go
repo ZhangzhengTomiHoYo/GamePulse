@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"bluebell/dao/pgsql"
-	"bluebell/models"
+	"gamepulse/dao/pgsql"
+	"gamepulse/models"
 )
 
 func GetCommunityList() ([]*models.Community, error) {

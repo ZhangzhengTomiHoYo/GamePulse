@@ -1,8 +1,8 @@
 package pgsql
 
 import (
-	"bluebell/models"
 	"database/sql"
+	"gamepulse/models"
 
 	"go.uber.org/zap"
 )

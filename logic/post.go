@@ -1,15 +1,15 @@
 package logic
 
 import (
-	"bluebell/dao/minio"
-	"bluebell/dao/pgsql"
-	"bluebell/dao/redis"
-	"bluebell/models"
-	"bluebell/pkg/snowflake"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gamepulse/dao/minio"
+	"gamepulse/dao/pgsql"
+	"gamepulse/dao/redis"
+	"gamepulse/models"
+	"gamepulse/pkg/snowflake"
 	"mime/multipart"
 	"path/filepath"
 	"strconv"

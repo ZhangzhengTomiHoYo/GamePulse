@@ -1,8 +1,8 @@
 package pgsql
 
 import (
-	"bluebell/setting"
 	"fmt"
+	"gamepulse/setting"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"

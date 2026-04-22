@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"bluebell/logic"
-	"bluebell/models"
+	"gamepulse/logic"
+	"gamepulse/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"

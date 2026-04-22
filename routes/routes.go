@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"bluebell/controllers"
-	"bluebell/logger"
-	"bluebell/middlewares"
+	"gamepulse/controllers"
+	"gamepulse/logger"
+	"gamepulse/middlewares"
 	"net/http"
 	"time"
 
-	_ "bluebell/docs" // 千万不要忘了导入把你上一步生成的docs
+	_ "gamepulse/docs" // 千万不要忘了导入把你上一步生成的docs
 
 	// 注意：这里换成了 github.com/swaggo/files
 	swaggerFiles "github.com/swaggo/files"

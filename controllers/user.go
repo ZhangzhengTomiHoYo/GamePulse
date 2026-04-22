@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"bluebell/dao/pgsql"
-	"bluebell/logic"
-	"bluebell/models"
 	"errors"
 	"fmt"
+	"gamepulse/dao/pgsql"
+	"gamepulse/logic"
+	"gamepulse/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"

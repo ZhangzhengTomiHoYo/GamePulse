@@ -1,10 +1,10 @@
 package logic
 
 import (
-	"bluebell/dao/pgsql"
-	"bluebell/models"
-	"bluebell/pkg/jwt"
-	"bluebell/pkg/snowflake"
+	"gamepulse/dao/pgsql"
+	"gamepulse/models"
+	"gamepulse/pkg/jwt"
+	"gamepulse/pkg/snowflake"
 
 	"go.uber.org/zap"
 )

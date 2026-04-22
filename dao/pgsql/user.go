@@ -1,10 +1,10 @@
 package pgsql
 
 import (
-	"bluebell/models"
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
+	"gamepulse/models"
 )
 
 // 把每一步数据库操作封装成函数

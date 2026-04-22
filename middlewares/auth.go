@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	"bluebell/controllers"
-	"bluebell/pkg/jwt"
+	"gamepulse/controllers"
+	"gamepulse/pkg/jwt"
 	"strings"
 
 	"github.com/gin-gonic/gin"

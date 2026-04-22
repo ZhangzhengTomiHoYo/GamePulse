@@ -1,4 +1,4 @@
-name: "bluebell"
+name: "gamepulse"
 mode: "dev"
 port: 8080
 version: "v0.0.1"
@@ -40,10 +40,10 @@ minio:
 
 
 llm:
-  api_key: "sk-"
+  api_key: "sk-edb675304217414eb721e44381e272e8"
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   model: "qwen3.6-plus"
-  timeout_seconds: 30
+  timeout_seconds: 60
 
 milvus:
   address: "127.0.0.1:19530"
@@ -56,7 +56,7 @@ milvus:
   index_type: "HNSW"
 
 embedding:
-  api_key: "sk-"
+  api_key: "sk-edb675304217414eb721e44381e272e8"
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   model: "text-embedding-v4"
   timeout_seconds: 30

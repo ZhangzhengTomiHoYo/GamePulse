@@ -1,7 +1,7 @@
 package pgsql
 
 import (
-	"bluebell/models"
+	"gamepulse/models"
 	"time"
 )
 

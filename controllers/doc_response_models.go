@@ -1,6 +1,6 @@
 package controllers
 
-import "bluebell/models"
+import "gamepulse/models"
 
 // 专门用来放接口文档用到的models
 // 因为我们的接口文档返回的数据格式是一致的，但是具体的data类型不一致

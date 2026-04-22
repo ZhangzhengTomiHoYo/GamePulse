@@ -1,8 +1,8 @@
 package redis
 
 import (
-	"bluebell/models"
 	"fmt"
+	"gamepulse/models"
 	"strconv"
 	"time"
 
@@ -39,7 +39,7 @@ func RemovePostFromCache(postID, communityID int64) error {
 func getIDsFromKey(key string, page, size int64) ([]string, error) {
 	// 2. 确定查询的索引起始点
 	start := (page - 1) * size
-	// Redis命令对于[0,2]是左闭右也闭的查询 zrange bluebell:post:score 0 2 withscores
+	// Redis命令对于[0,2]是左闭右也闭的查询 zrange gamepulse:post:score 0 2 withscores
 	// 所以查3个是 索引为 2  要减一
 	end := start + size - 1
 	// 3. ZREVRANGE 查询 按分数从大到校的顺序查询指定数量的元素
@@ -103,7 +103,7 @@ func GetCommunityPostIdsInOrder(p *models.ParamPostList) ([]string, error) {
 		pipeline := client.Pipeline()
 		pipeline.ZInterStore(key, redis.ZStore{
 			Aggregate: "MAX",
-		}, cKey, orderKey)                   // zinterscore 计算
+		}, cKey, orderKey) // zinterscore 计算
 		pipeline.Expire(key, 60*time.Second) // 设置超时时间
 		_, err := pipeline.Exec()
 		if err != nil {

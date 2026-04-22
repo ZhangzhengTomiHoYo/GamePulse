@@ -1,14 +1,14 @@
 package logic
 
 import (
-	"bluebell/dao/milvus"
-	"bluebell/models"
-	"bluebell/setting"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"gamepulse/dao/milvus"
+	"gamepulse/models"
+	"gamepulse/setting"
 	"strings"
 	"time"
 

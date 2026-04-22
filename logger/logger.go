@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"bluebell/setting"
+	"gamepulse/setting"
 	"net"
 	"net/http"
 	"net/http/httputil"
