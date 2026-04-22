@@ -41,6 +41,10 @@
                 <el-icon><Compass /></el-icon>
                 <span>综合</span>
               </el-menu-item>
+              <el-menu-item index="agent" @click="goCommunityAgent">
+                <el-icon><ChatLineRound /></el-icon>
+                <span>游小脉社区智能体</span>
+              </el-menu-item>
               
               <div class="menu-title" style="margin-top: 10px;">社区</div>
               <el-menu-item 
@@ -213,6 +217,7 @@ const currentCommunityId = ref(0)
 
 const goCreatePost = () => { router.push('/post/create') }
 const goDetail = (id) => { router.push(`/post/${id}`) }
+const goCommunityAgent = () => { router.push('/agent/community') }
 
 // 处理下拉菜单命令
 const handleCommand = (command) => {
