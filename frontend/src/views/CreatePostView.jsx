@@ -152,7 +152,7 @@ export default function CreatePostView() {
     try {
       const payload = {
         ...form,
-        community_id: Number(form.community_id),
+        community_id: String(form.community_id),
         image_urls: [...uploadedImageUrls]
       }
 

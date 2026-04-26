@@ -36,7 +36,7 @@ const normalizeSources = (rawSources) => {
         '综合'
 
       return {
-        post_id: postId ? Number(postId) : null,
+        post_id: postId !== null && postId !== undefined && postId !== '' ? String(postId) : null,
         title: String(title),
         excerpt: typeof excerpt === 'string' ? excerpt : '',
         community_name: String(communityName),
