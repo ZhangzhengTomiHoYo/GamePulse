@@ -191,6 +191,9 @@ export default function CreatePostView() {
 
   return (
     <main className="create-post-container">
+      <div className="bg-glow-top-left" />
+      <div className="bg-glow-top-right" />
+      <div className="bg-glow-bottom" />
       <section className="editor-card">
         <div className="editor-header">
           <button className="ghost-action" type="button" onClick={() => navigate(-1)}>
@@ -204,6 +207,7 @@ export default function CreatePostView() {
           <label className="field-block">
             <span>标题</span>
             <input
+              className="glass-input"
               value={form.title}
               placeholder="请输入标题"
               onChange={(event) => updateForm('title', event.target.value)}
@@ -213,6 +217,7 @@ export default function CreatePostView() {
           <label className="field-block">
             <span>内容</span>
             <textarea
+              className="glass-input"
               value={form.content}
               rows={15}
               placeholder="请输入帖子内容"
@@ -271,6 +276,7 @@ export default function CreatePostView() {
           <label className="field-block">
             <span>选择社区</span>
             <select
+              className="glass-input"
               value={form.community_id}
               onChange={(event) => updateForm('community_id', event.target.value)}
             >
@@ -287,7 +293,7 @@ export default function CreatePostView() {
             <button className="ghost-action" type="button" onClick={() => navigate(-1)}>
               取消
             </button>
-            <button className="primary-action" type="submit" disabled={submitting || isUploading}>
+            <button className="primary-action primary-gradient-button" type="submit" disabled={submitting || isUploading}>
               {submitting ? <UploadCloud size={18} /> : <Send size={18} />}
               <span>{submitting ? '发布中...' : '立即发布'}</span>
             </button>

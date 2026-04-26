@@ -15,6 +15,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import ImagePreview from '../components/ImagePreview.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
+import logoImg from '../assets/gamepulse.png'
 import {
   formatPostTime,
   getAuthHeaders,
@@ -150,10 +151,13 @@ export default function HomeView() {
 
   return (
     <div className="common-layout">
+      <div className="bg-glow-top-left" />
+      <div className="bg-glow-top-right" />
+      <div className="bg-glow-bottom" />
       <header className="app-header">
         <div className="header-inner">
           <button className="logo-area" type="button" onClick={() => navigate('/')}>
-            <span className="logo-icon">GP</span>
+            <img src={logoImg} alt="GamePulse" className="logo-image" />
             <span className="logo-text">GamePulse</span>
           </button>
 
@@ -317,9 +321,10 @@ export default function HomeView() {
               ))}
 
             {!loading && posts.length === 0 && (
-              <div className="empty-block">
-                <Send size={32} />
-                <p>暂无内容，来发布第一篇吧！</p>
+              <div className="empty-glass-card">
+                <Sparkles size={48} />
+                <h3>尚未产生动态</h3>
+                <p>还没有社区动态，发布第一篇帖子，开始收集玩家情绪。</p>
               </div>
             )}
           </div>

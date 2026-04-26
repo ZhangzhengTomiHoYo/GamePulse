@@ -3,6 +3,7 @@ import { Compass, Copy, Edit3, Plus, RefreshCw, Send, Sparkles, Square, X } from
 import { useNavigate } from 'react-router-dom'
 import { streamCommunityAgentReply } from '../api/agent.js'
 import { useToast } from '../components/ToastProvider.jsx'
+import logoImg from '../assets/gamepulse.png'
 
 const suggestedPrompts = [
   '最近社区里大家对哪个游戏活动讨论最多？',
@@ -70,6 +71,221 @@ const formatScore = (score) => `相关度 ${(Number(score) || 0).toFixed(2)}`
 
 const formatMessageTime = (time) =>
   new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+const isMarkdownBlockStart = (line) => {
+  const trimmed = line.trim()
+  return (
+    /^```/.test(trimmed) ||
+    /^#{1,6}\s+/.test(trimmed) ||
+    /^>\s?/.test(trimmed) ||
+    /^[-*+]\s+/.test(trimmed) ||
+    /^\d+\.\s+/.test(trimmed) ||
+    /^\|?.+\|.+\|?$/.test(trimmed)
+  )
+}
+
+const renderInlineMarkdown = (text, keyPrefix) => {
+  const nodes = []
+  const pattern = /(\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))/g
+  let lastIndex = 0
+  let match
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index))
+    }
+
+    if (match[2]) {
+      nodes.push(<strong key={`${keyPrefix}-strong-${match.index}`}>{match[2]}</strong>)
+    } else if (match[3]) {
+      nodes.push(<code key={`${keyPrefix}-code-${match.index}`}>{match[3]}</code>)
+    } else if (match[4] && match[5]) {
+      nodes.push(
+        <a
+          key={`${keyPrefix}-link-${match.index}`}
+          href={match[5]}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {match[4]}
+        </a>
+      )
+    }
+
+    lastIndex = pattern.lastIndex
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex))
+  }
+
+  return nodes.length > 0 ? nodes : text
+}
+
+function MarkdownMessage({ content }) {
+  const lines = String(content || '').replace(/\r\n/g, '\n').split('\n')
+  const blocks = []
+  let index = 0
+
+  while (index < lines.length) {
+    const line = lines[index]
+    const trimmed = line.trim()
+
+    if (!trimmed) {
+      index += 1
+      continue
+    }
+
+    const codeFenceMatch = trimmed.match(/^```(\w+)?/)
+    if (codeFenceMatch) {
+      const codeLines = []
+      index += 1
+
+      while (index < lines.length && !lines[index].trim().startsWith('```')) {
+        codeLines.push(lines[index])
+        index += 1
+      }
+
+      if (index < lines.length) index += 1
+
+      blocks.push(
+        <pre key={`code-${index}`} className="markdown-code-block">
+          <code>{codeLines.join('\n')}</code>
+        </pre>
+      )
+      continue
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/)
+    if (headingMatch) {
+      const HeadingTag = `h${Math.min(headingMatch[1].length, 4)}`
+      blocks.push(
+        <HeadingTag key={`heading-${index}`}>
+          {renderInlineMarkdown(headingMatch[2], `heading-${index}`)}
+        </HeadingTag>
+      )
+      index += 1
+      continue
+    }
+
+    if (/^>\s?/.test(trimmed)) {
+      const quoteLines = []
+      while (index < lines.length && /^>\s?/.test(lines[index].trim())) {
+        quoteLines.push(lines[index].trim().replace(/^>\s?/, ''))
+        index += 1
+      }
+      blocks.push(
+        <blockquote key={`quote-${index}`}>
+          {quoteLines.map((quoteLine, quoteIndex) => (
+            <p key={`quote-line-${quoteIndex}`}>
+              {renderInlineMarkdown(quoteLine, `quote-${index}-${quoteIndex}`)}
+            </p>
+          ))}
+        </blockquote>
+      )
+      continue
+    }
+
+    if (/^[-*+]\s+/.test(trimmed)) {
+      const items = []
+      while (index < lines.length && /^[-*+]\s+/.test(lines[index].trim())) {
+        items.push(lines[index].trim().replace(/^[-*+]\s+/, ''))
+        index += 1
+      }
+      blocks.push(
+        <ul key={`ul-${index}`}>
+          {items.map((item, itemIndex) => (
+            <li key={`ul-item-${itemIndex}`}>
+              {renderInlineMarkdown(item, `ul-${index}-${itemIndex}`)}
+            </li>
+          ))}
+        </ul>
+      )
+      continue
+    }
+
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items = []
+      while (index < lines.length && /^\d+\.\s+/.test(lines[index].trim())) {
+        items.push(lines[index].trim().replace(/^\d+\.\s+/, ''))
+        index += 1
+      }
+      blocks.push(
+        <ol key={`ol-${index}`}>
+          {items.map((item, itemIndex) => (
+            <li key={`ol-item-${itemIndex}`}>
+              {renderInlineMarkdown(item, `ol-${index}-${itemIndex}`)}
+            </li>
+          ))}
+        </ol>
+      )
+      continue
+    }
+
+    const nextLine = lines[index + 1]?.trim() || ''
+    if (trimmed.includes('|') && /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(nextLine)) {
+      const headers = trimmed.replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim())
+      const rows = []
+      index += 2
+
+      while (index < lines.length && lines[index].trim().includes('|')) {
+        rows.push(lines[index].trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim()))
+        index += 1
+      }
+
+      blocks.push(
+        <div key={`table-${index}`} className="markdown-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                {headers.map((header, headerIndex) => (
+                  <th key={`th-${headerIndex}`}>
+                    {renderInlineMarkdown(header, `th-${index}-${headerIndex}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={`tr-${rowIndex}`}>
+                  {headers.map((_, cellIndex) => (
+                    <td key={`td-${rowIndex}-${cellIndex}`}>
+                      {renderInlineMarkdown(row[cellIndex] || '', `td-${index}-${rowIndex}-${cellIndex}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+      continue
+    }
+
+    const paragraphLines = []
+    while (
+      index < lines.length &&
+      lines[index].trim() &&
+      (paragraphLines.length === 0 || !isMarkdownBlockStart(lines[index]))
+    ) {
+      paragraphLines.push(lines[index].trim())
+      index += 1
+    }
+
+    blocks.push(
+      <p key={`paragraph-${index}`}>
+        {paragraphLines.map((paragraphLine, lineIndex) => (
+          <span key={`paragraph-line-${lineIndex}`}>
+            {lineIndex > 0 && <br />}
+            {renderInlineMarkdown(paragraphLine, `paragraph-${index}-${lineIndex}`)}
+          </span>
+        ))}
+      </p>
+    )
+  }
+
+  return <div className="markdown-body">{blocks}</div>
+}
 
 export default function CommunityAgentView() {
   const navigate = useNavigate()
@@ -311,10 +527,13 @@ export default function CommunityAgentView() {
 
   return (
     <div className="agent-page">
+      <div className="bg-glow-top-left" />
+      <div className="bg-glow-top-right" />
+      <div className="bg-glow-bottom" />
       <header className="agent-header">
         <div className="agent-header-inner">
           <button className="brand-block" type="button" onClick={() => navigate('/')}>
-            <div className="brand-mark">GP</div>
+            <img src={logoImg} alt="GamePulse" className="brand-image" />
             <div className="brand-copy">
               <div className="brand-title">GamePulse</div>
               <div className="brand-subtitle">游小脉社区智能体</div>
@@ -418,11 +637,13 @@ export default function CommunityAgentView() {
                   </div>
 
                   <div
-                    className={`message-bubble ${message.pending ? 'is-pending' : ''} ${
+                    className={`message-bubble ${message.role === 'assistant' ? 'glass-bubble-ai' : 'glass-bubble-user'} ${message.pending ? 'is-pending' : ''} ${
                       message.failed ? 'is-failed' : ''
                     }`}
                   >
-                    <div className="message-content">{message.content}</div>
+                    <div className="message-content">
+                      <MarkdownMessage content={message.content} />
+                    </div>
 
                     {message.pending && message.statusText && (
                       <div className="message-status">{message.statusText}</div>
@@ -487,18 +708,18 @@ export default function CommunityAgentView() {
             ))}
           </div>
 
-          <form className="composer-shell" onSubmit={(event) => event.preventDefault()}>
-            <div className="composer-box">
+          <form className="floating-composer-shell" onSubmit={(event) => event.preventDefault()}>
+            <div className="floating-composer-box">
               <textarea
                 value={draft}
                 rows={2}
-                placeholder="输入你想了解的社区问题，Enter 发送，Shift + Enter 换行"
+                placeholder="询问社区舆情、玩家反馈、版本争议或热点话题…"
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleComposerKeydown}
               />
 
-              <div className="composer-actions">
-                <div className="composer-hint">回答仅基于社区内容检索与大模型生成，不代表官方结论。</div>
+              <div className="floating-composer-actions">
+                <div className="floating-composer-hint">Enter 发送 · Shift + Enter 换行 · 回答仅基于社区内容生成</div>
                 <div className="composer-buttons">
                   {streaming ? (
                     <button className="ghost-action" type="button" onClick={stopStreaming}>
@@ -506,7 +727,7 @@ export default function CommunityAgentView() {
                       <span>停止回答</span>
                     </button>
                   ) : (
-                    <button className="primary-action" type="button" disabled={!draft.trim()} onClick={() => submitPrompt()}>
+                    <button className="primary-action primary-gradient-button" type="button" disabled={!draft.trim()} onClick={() => submitPrompt()}>
                       <Send size={16} />
                       <span>发送</span>
                     </button>

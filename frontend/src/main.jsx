@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { ToastProvider } from './components/ToastProvider.jsx'
 import './assets/main.css'
+import './assets/theme-glass.css'
 
 createRoot(document.getElementById('app')).render(
   <StrictMode>
