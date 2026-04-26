@@ -1,4 +1,4 @@
-const STREAM_ENDPOINT = '/api/v1/agent/community/chat/stream'
+const buildStreamEndpoint = (conversationId) => `/api/v1/chat/${conversationId}/stream`
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -83,44 +83,44 @@ const extractError = (payload) => {
   return String(payload.error ?? payload.message ?? payload.msg ?? '社区智能体暂时不可用')
 }
 
-const dispatchStreamEvent = (eventType, payload, hooks) => {
+const dispatchStreamEvent = async (eventType, payload, hooks) => {
   const type = (eventType || '').trim().toLowerCase()
 
   if (type === 'error') {
     const errorMessage = extractError(payload)
-    hooks.onError?.(errorMessage)
+    await hooks.onError?.(errorMessage)
     throw new Error(errorMessage)
   }
 
   if (type === 'status') {
-    hooks.onStatus?.(extractStatus(payload))
+    await hooks.onStatus?.(extractStatus(payload))
     return
   }
 
   if (type === 'sources') {
-    hooks.onSources?.(extractSources(payload))
+    await hooks.onSources?.(extractSources(payload))
     return
   }
 
   if (type === 'done') {
-    hooks.onDone?.(payload)
+    await hooks.onDone?.(payload)
     return
   }
 
   if (type === 'delta' || type === 'message' || type === '') {
     const deltaText = extractText(payload)
     if (deltaText) {
-      hooks.onDelta?.(deltaText)
+      await hooks.onDelta?.(deltaText)
     }
 
     const sources = extractSources(payload)
     if (sources.length > 0) {
-      hooks.onSources?.(sources)
+      await hooks.onSources?.(sources)
     }
 
     const status = extractStatus(payload)
     if (status && typeof payload === 'object' && payload.delta === undefined) {
-      hooks.onStatus?.(status)
+      await hooks.onStatus?.(status)
     }
   }
 }
@@ -171,7 +171,7 @@ const handleSSEStream = async (response, hooks) => {
   const decoder = new TextDecoder('utf-8')
   let buffer = ''
 
-  const processEventBlock = (block) => {
+  const processEventBlock = async (block) => {
     if (!block.trim()) return
 
     const lines = block.split(/\r?\n/)
@@ -192,12 +192,12 @@ const handleSSEStream = async (response, hooks) => {
     const rawData = dataLines.join('\n')
     if (!rawData) return
     if (rawData === '[DONE]') {
-      hooks.onDone?.()
+      await hooks.onDone?.()
       return
     }
 
     const payload = parseMaybeJSON(rawData)
-    dispatchStreamEvent(eventType, payload, hooks)
+    await dispatchStreamEvent(eventType, payload, hooks)
   }
 
   while (true) {
@@ -207,7 +207,7 @@ const handleSSEStream = async (response, hooks) => {
     let separatorIndex = buffer.search(/\r?\n\r?\n/)
     while (separatorIndex !== -1) {
       const block = buffer.slice(0, separatorIndex)
-      processEventBlock(block)
+      await processEventBlock(block)
       buffer = buffer.slice(separatorIndex + (buffer[separatorIndex] === '\r' ? 4 : 2))
       separatorIndex = buffer.search(/\r?\n\r?\n/)
     }
@@ -216,13 +216,13 @@ const handleSSEStream = async (response, hooks) => {
   }
 
   if (buffer.trim()) {
-    processEventBlock(buffer)
+    await processEventBlock(buffer)
   }
 }
 
 export const streamCommunityAgentReply = async ({
   question,
-  messages = [],
+  conversationId,
   signal,
   onStatus,
   onSources,
@@ -230,13 +230,19 @@ export const streamCommunityAgentReply = async ({
   onDone,
   onError
 }) => {
-  const response = await fetch(STREAM_ENDPOINT, {
+  const routeConversationId = conversationId ? String(conversationId) : 'new'
+  const payload = {
+    query: question
+  }
+
+  if (conversationId) {
+    payload.conversation_id = String(conversationId)
+  }
+
+  const response = await fetch(buildStreamEndpoint(routeConversationId), {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({
-      question,
-      messages
-    }),
+    body: JSON.stringify(payload),
     signal
   })
 

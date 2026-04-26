@@ -226,7 +226,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ChatLineRound, Compass, EditPen, Plus } from '@element-plus/icons-vue'
@@ -236,6 +236,7 @@ const router = useRouter()
 const username = ref(localStorage.getItem('username') || '用户')
 const draft = ref('')
 const messages = ref([])
+const conversationId = ref('')
 const streaming = ref(false)
 const abortController = ref(null)
 const messageListRef = ref(null)
@@ -313,14 +314,6 @@ const formatScore = (score) => `相关度 ${(Number(score) || 0).toFixed(2)}`
 const formatMessageTime = (time) =>
   new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-const buildConversationMessages = () =>
-  messages.value
-    .filter((message) => !message.excludeFromContext && message.content.trim())
-    .map((message) => ({
-      role: message.role,
-      content: message.content
-    }))
-
 const scrollToBottom = async (behavior = 'smooth') => {
   await nextTick()
 
@@ -346,6 +339,7 @@ const resetConversation = () => {
   }
 
   messages.value = [createWelcomeMessage()]
+  conversationId.value = ''
   draft.value = ''
   activeStatusText.value = ''
   abortController.value = null
@@ -384,20 +378,37 @@ const isLatestAssistantMessage = (messageId) => {
 }
 
 const sendPromptWithContext = async (question) => {
-  const assistantMessage = createAssistantPlaceholder()
+  const assistantMessage = reactive(createAssistantPlaceholder())
   messages.value.push(assistantMessage)
   streaming.value = true
   activeStatusText.value = assistantMessage.statusText
 
   const controller = new AbortController()
   abortController.value = controller
+  let scrollScheduled = false
+
+  const scheduleScrollToBottom = () => {
+    if (scrollScheduled) return
+
+    scrollScheduled = true
+
+    const scheduler =
+      typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 16)
+
+    scheduler(async () => {
+      scrollScheduled = false
+      await scrollToBottom('auto')
+    })
+  }
 
   await scrollToBottom('auto')
 
   try {
     await streamCommunityAgentReply({
       question,
-      messages: buildConversationMessages(),
+      conversationId: conversationId.value,
       signal: controller.signal,
       onStatus: (status) => {
         if (!status) return
@@ -412,9 +423,12 @@ const sendPromptWithContext = async (question) => {
         assistantMessage.content += delta
         assistantMessage.statusText = ''
         activeStatusText.value = ''
-        scrollToBottom('auto')
+        scheduleScrollToBottom()
       },
-      onDone: () => {
+      onDone: (payload) => {
+        if (payload?.conversation_id !== undefined && payload?.conversation_id !== null) {
+          conversationId.value = String(payload.conversation_id)
+        }
         assistantMessage.pending = false
         assistantMessage.statusText = ''
         activeStatusText.value = ''

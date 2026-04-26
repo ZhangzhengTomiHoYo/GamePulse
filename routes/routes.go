@@ -54,6 +54,10 @@ func Setup(mode string) *gin.Engine {
 		v1.DELETE("/post/:id", controllers.DeletePostHandler)
 
 		v1.POST("/upload", controllers.UploadImageHandler)
+
+		//v1.POST("/chat/:id/stream", controllers.ChatStreamHandler)
+		//v1.POST("/chat/:id/stream", controllers.ChainHandler)
+		v1.POST("/chat/:id/stream", controllers.GraphDemoHandler)
 	}
 	pprof.Register(r) // 注册pprof相关路由
 	r.NoRoute(func(c *gin.Context) {

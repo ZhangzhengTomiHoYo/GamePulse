@@ -25,6 +25,17 @@ type AppConfig struct {
 	*LLMConfig       `mapstructure:"llm"`
 	*MilvusConfig    `mapstructure:"milvus"`
 	*EmbeddingConfig `mapstructure:"embedding"`
+	*ChatAgentConfig `mapstructure:"chat_agent"`
+}
+
+type ChatAgentConfig struct {
+	TopK                 int    `mapstructure:"top_k"`
+	MaxHistoryMessages   int    `mapstructure:"max_history_messages"`
+	MaxSourcePosts       int    `mapstructure:"max_source_posts"`
+	MaxContextChars      int    `mapstructure:"max_context_chars"`
+	RewriteModel         string `mapstructure:"rewrite_model"`
+	AnswerModel          string `mapstructure:"answer_model"`
+	StreamTimeoutSeconds int    `mapstructure:"stream_timeout_seconds"`
 }
 
 type EmbeddingConfig struct {
