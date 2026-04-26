@@ -1,11 +1,16 @@
-# 构建阶段
 FROM golang:alpine AS builder
 
 ENV CGO_ENABLED=0 \
     GOOS=linux \
-    GOARCH=amd64
+    GOARCH=amd64 \
+    GOPROXY=https://goproxy.cn,direct \
+    GOSUMDB=sum.golang.google.cn
 
 WORKDIR /src
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.cloud.tencent.com/alpine|g' /etc/apk/repositories \
+    && apk add --no-cache git ca-certificates tzdata \
+    && update-ca-certificates
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -13,13 +18,12 @@ RUN go mod download
 COPY . .
 RUN go build -o gamepulse_app .
 
-# 运行阶段
 FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# 安装 ca-certificates 供 HTTPS API 调用使用，安装 netcat 供 wait-for.sh 检查依赖端口
 RUN set -eux; \
+    sed -i 's|http://deb.debian.org/debian|http://mirrors.cloud.tencent.com/debian|g; s|http://security.debian.org/debian-security|http://mirrors.cloud.tencent.com/debian-security|g' /etc/apt/sources.list.d/debian.sources || true; \
     apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates netcat-openbsd; \
     rm -rf /var/lib/apt/lists/*
@@ -27,12 +31,11 @@ RUN set -eux; \
 COPY wait-for.sh ./wait-for.sh
 COPY templates ./templates
 COPY assets ./assets
+COPY conf ./conf
 COPY --from=builder /src/gamepulse_app ./gamepulse_app
 
-# conf/config.docker.yaml 由 docker-compose 运行时挂载，避免把生产密钥打进镜像
-RUN mkdir -p ./conf && sed -i 's/\r$//' ./wait-for.sh && chmod 755 ./wait-for.sh
+RUN sed -i 's/\r$//' ./wait-for.sh && chmod 755 ./wait-for.sh
 
 EXPOSE 8080
 
-# 默认命令保留给直接 docker run；docker-compose 会传入 config.docker.yaml
 CMD ["./gamepulse_app"]
