@@ -38,16 +38,17 @@ func Setup(mode string) *gin.Engine {
 	v1.POST("/signup", controllers.SignUpHandler)
 	v1.POST("/login", controllers.LoginHandler)
 
+	v1.GET("/community", controllers.CommunityHandler)
+	v1.GET("/community/:id", controllers.CommunityDetailHandler)
+	v1.GET("/post/:id", controllers.GetPostDetailHandler)
+	v1.GET("/posts", controllers.GetListDetailHandler)
+	v1.GET("/posts2", controllers.GetListDetailHandler2)
+
 	v1.Use(middlewares.JWTAuthMiddleware()) // 应用JWT认证中间件
 
 	{
-		v1.GET("/community", controllers.CommunityHandler)
-		v1.GET("/community/:id", controllers.CommunityDetailHandler)
 
 		v1.POST("/post", controllers.CreatePostHandler)
-		v1.GET("/post/:id", controllers.GetPostDetailHandler)
-		v1.GET("/posts", controllers.GetListDetailHandler)
-		v1.GET("/posts2", controllers.GetListDetailHandler2)
 
 		v1.POST("/vote", controllers.PostVoteController)
 
