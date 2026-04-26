@@ -61,6 +61,10 @@ func SignUpHandler(c *gin.Context) {
 	// 2. 业务处理
 	if err := logic.SignUp(p); err != nil {
 		zap.L().Error("logic.SignUp failed", zap.Error(err))
+		if errors.Is(err, logic.ErrorInvalidInvitationCode) {
+			ResponseErrorWithMsg(c, CodeInvalidParam, "邀请码错误")
+			return
+		}
 		if errors.Is(err, pgsql.ErrorUserExist) {
 			ResponseError(c, CodeUserExist)
 			return
