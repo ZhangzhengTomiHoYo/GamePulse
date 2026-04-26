@@ -11,7 +11,15 @@ import (
 // 过期时间
 //const TokenExpireDuration = time.Hour * 2
 
-var mySecret = []byte("我是指针")
+const defaultSecret = "我是指针"
+
+func jwtSecret() []byte {
+	secret := viper.GetString("auth.jwt_secret")
+	if secret == "" {
+		secret = defaultSecret
+	}
+	return []byte(secret)
+}
 
 type MyClaims struct {
 	UserID   int64  `json:"user_id"`
@@ -34,7 +42,7 @@ func GenToken(userID int64, username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
 	// 使用指定的secret签名并获得完整的编码后的字符串token
 	// 别人拿到token，但是不知道mySecret，也解密不了
-	return token.SignedString(mySecret)
+	return token.SignedString(jwtSecret())
 }
 
 // ParseToken 解析JWT
@@ -53,7 +61,7 @@ func ParseToken(tokenString string) (*MyClaims, error) {
 	// 解析token 写法2
 	var mc = new(MyClaims)
 	token, err := jwt.ParseWithClaims(tokenString, mc, func(token *jwt.Token) (interface{}, error) {
-		return mySecret, nil
+		return jwtSecret(), nil
 	})
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package setting
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -58,11 +59,12 @@ type MilvusConfig struct {
 
 // 2. 在文件底部定义 MinIOConfig 结构体
 type MinIOConfig struct {
-	Endpoint   string `mapstructure:"endpoint"`
-	AccessKey  string `mapstructure:"access_key"`
-	SecretKey  string `mapstructure:"secret_key"`
-	UseSSL     bool   `mapstructure:"use_ssl"`
-	BucketName string `mapstructure:"bucket_name"`
+	Endpoint       string `mapstructure:"endpoint"`
+	PublicEndpoint string `mapstructure:"public_endpoint"`
+	AccessKey      string `mapstructure:"access_key"`
+	SecretKey      string `mapstructure:"secret_key"`
+	UseSSL         bool   `mapstructure:"use_ssl"`
+	BucketName     string `mapstructure:"bucket_name"`
 }
 
 type LLMConfig struct {
@@ -102,13 +104,19 @@ func Init() (err error) {
 	// 方式1: 直接指定配置文件路径 (相对路径或者绝对路径)
 	// 相对路径: 相对执行的可执行文件的相对路径
 	// 绝对路径: 系统中实际的文件路径
-	//viper.SetConfigFile("./conf/config.yaml")
+	// viper.SetConfigFile("./conf/config.yaml")
+	// Docker/生产环境可以通过命令行第一个参数显式指定配置文件，例如：
+	// ./gamepulse_app ./conf/config.docker.yaml
+	if len(os.Args) > 1 && os.Args[1] != "" {
+		viper.SetConfigFile(os.Args[1])
+	} else {
+		// 方式2: 指定配置文件名和配置文件的位置, viper自行查找可用的配置文件
+		// 配置文件名不需要带后缀
+		// 配置文件位置可配置多个
+		viper.SetConfigName("config") // 指定配置文件名 (不带后缀)
+		viper.AddConfigPath("./conf") // 指定查找配置文件的路径 (这里使用相对路径)
+	}
 
-	// 方式2: 指定配置文件名和配置文件的位置, viper自行查找可用的配置文件
-	// 配置文件名不需要带后缀
-	// 配置文件位置可配置多个
-	viper.SetConfigName("config") // 指定配置文件名 (不带后缀)
-	viper.AddConfigPath("./conf") // 指定查找配置文件的路径 (这里使用相对路径)
 	//
 	//你给viper传一个字节流数据，得告诉是什么格式的
 	//基本上是配合远程配置中心使用的，告诉 viper 当前的数据使用什么格式去解析
@@ -122,7 +130,7 @@ func Init() (err error) {
 	//
 	// 使用结构体，需要将配置 反序列化到Conf变量中
 	if err = viper.Unmarshal(Conf); err != nil {
-
+		return
 	}
 	viper.WatchConfig()
 	viper.OnConfigChange(func(in fsnotify.Event) {

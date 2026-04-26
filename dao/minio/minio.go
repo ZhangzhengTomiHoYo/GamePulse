@@ -11,16 +11,21 @@ import (
 )
 
 var (
-	client     *minio.Client
-	bucketName string
-	endpoint   string
-	useSSL     bool
+	client         *minio.Client
+	bucketName     string
+	endpoint       string
+	publicEndpoint string
+	useSSL         bool
 )
 
 // Init 初始化 MinIO 客户端
 func Init(cfg *setting.MinIOConfig) error {
 	var err error
 	endpoint = cfg.Endpoint
+	publicEndpoint = cfg.PublicEndpoint
+	if publicEndpoint == "" {
+		publicEndpoint = endpoint
+	}
 	bucketName = cfg.BucketName
 	useSSL = cfg.UseSSL
 
