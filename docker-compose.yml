@@ -1,25 +1,65 @@
 services:
-  mysql:
-    image: "mysql:8.0"
-    ports:
-      - "3306:3306"
-    command: "--init-file /data/application/init.sql"
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: gamepulse-postgres
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: "123456"
+      POSTGRES_DB: gamepulse
+      POSTGRES_USER: gamepulse
+      POSTGRES_PASSWORD: gamepulse_pg_password_change_me
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
-      - ./init.sql:/data/application/init.sql
+      - postgres_data:/var/lib/postgresql/data
+      - ./models/create_table_pgsql.sql:/docker-entrypoint-initdb.d/01_create_table_pgsql.sql:ro
+      - ./models/create_table_pgsql_chat.sql:/docker-entrypoint-initdb.d/02_create_table_pgsql_chat.sql:ro
+
   redis:
-    image: "redis:latest"
+    image: redis:7
+    container_name: gamepulse-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "gamepulse_redis_password_change_me"]
     ports:
-      - "6379:6379"
-  bubble_app:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: gamepulse-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: gamepulse_minio
+      MINIO_ROOT_PASSWORD: gamepulse_minio_password_change_me
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+
+  gamepulse_app:
     build: .
-    # -----------------------------------------------------------
-    # 修正：使用数组格式 (方括号)，确保 wait-for.sh 能接收到参数
-    # -----------------------------------------------------------
-    command: ["/wait-for.sh", "pgsql:5432", "redis:6379", "--", "/gamepulse_app", "./conf/config.yaml"]
+    container_name: gamepulse-app
+    restart: unless-stopped
     depends_on:
-      - mysql
+      - postgres
       - redis
+      - minio
+    command:
+      - ./wait-for.sh
+      - postgres:5432
+      - redis:6379
+      - minio:9000
+      - --
+      - ./gamepulse_app
+      - ./conf/config.docker.yaml
     ports:
-      - "8888:8080"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./conf/config.docker.yaml:/app/conf/config.docker.yaml:ro
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

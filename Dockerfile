@@ -1,15 +1,13 @@
 # 构建阶段
 FROM golang:alpine AS builder
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
+ENV CGO_ENABLED=0 \
     GOOS=linux \
     GOARCH=amd64
 
-WORKDIR /build
+WORKDIR /src
 
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
@@ -18,22 +16,23 @@ RUN go build -o gamepulse_app .
 # 运行阶段
 FROM debian:bookworm-slim
 
-# 建议：设置时区为上海（可选，方便看日志）
-# RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+WORKDIR /app
 
-COPY ./wait-for.sh /
-COPY ./templates /templates
-COPY ./assets /assets
-COPY ./conf /conf
-
-COPY --from=builder /build/gamepulse_app /
-
-# 核心修正：增加 sed -i 这一行，强制把 windows 换行符转为 linux 换行符
+# 安装 ca-certificates 供 HTTPS API 调用使用，安装 netcat 供 wait-for.sh 检查依赖端口
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends netcat-openbsd; \
-    sed -i 's/\r$//' /wait-for.sh; \
-    chmod 755 /wait-for.sh; \
+    apt-get install -y --no-install-recommends ca-certificates netcat-openbsd; \
     rm -rf /var/lib/apt/lists/*
 
-# 这里的 ENTRYPOINT 或 CMD 由 docker-compose 接管
+COPY wait-for.sh ./wait-for.sh
+COPY templates ./templates
+COPY assets ./assets
+COPY --from=builder /src/gamepulse_app ./gamepulse_app
+
+# conf/config.docker.yaml 由 docker-compose 运行时挂载，避免把生产密钥打进镜像
+RUN mkdir -p ./conf && sed -i 's/\r$//' ./wait-for.sh && chmod 755 ./wait-for.sh
+
+EXPOSE 8080
+
+# 默认命令保留给直接 docker run；docker-compose 会传入 config.docker.yaml
+CMD ["./gamepulse_app"]

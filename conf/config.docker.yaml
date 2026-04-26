@@ -1,5 +1,5 @@
 name: "gamepulse"
-mode: "dev"
+mode: "release"
 port: 8080
 version: "v0.0.1"
 start_time: "2025-12-05"
@@ -7,56 +7,47 @@ machine_id: 1
 
 auth:
   jwt_expire: 8760
+  jwt_secret: "gamepulse_jwt_secret_change_me"
 
 log:
-  level: "debug"
-  filename: "web_app.log"
+  level: "info"
+  filename: "/app/web_app.log"
   max_size: 200
   max_age: 30
   max_backups: 7
 
 postgres:
-  host: 127.0.0.1
+  host: "postgres"
   port: 5432
-  user: "postgres"
-  password: "123456"
+  user: "gamepulse"
+  password: "gamepulse_pg_password_change_me"
   dbname: "gamepulse"
   max_open_conns: 20
   max_idle_conns: 5
 
 redis:
-  host: 127.0.0.1
+  host: "redis"
   port: 6379
-  password: ""
+  password: "gamepulse_redis_password_change_me"
   db: 0
   pool_size: 10
 
 minio:
-  endpoint: "127.0.0.1:9000"
-  access_key: "admin"
-  secret_key: "password123"
+  endpoint: "minio:9000"
+  public_endpoint: "101.43.85.94/minio"
+  access_key: "gamepulse_minio"
+  secret_key: "gamepulse_minio_password_change_me"
   use_ssl: false
   bucket_name: "gamepulse"
 
-
 llm:
-  api_key: "sk-edb675304217414eb721e44381e272e8"
+  api_key: ""
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   model: "qwen3.6-flash"
   timeout_seconds: 60
 
-milvus:
-  address: "127.0.0.1:19530"
-  username: ""
-  password: ""
-  db_name: "default"
-  collection_name: "post_vectors"
-  dimension: 1024
-  metric_type: "COSINE"
-  index_type: "HNSW"
-
 embedding:
-  api_key: "sk-edb675304217414eb721e44381e272e8"
+  api_key: ""
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   model: "text-embedding-v4"
   timeout_seconds: 30
@@ -66,4 +57,3 @@ chat_agent:
   max_history_messages: 12
   max_source_posts: 4
   max_context_chars: 5000
-
