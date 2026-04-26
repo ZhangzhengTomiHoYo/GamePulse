@@ -7,9 +7,10 @@ const (
 
 // ParaSignUp 注册参数
 type ParaSignUp struct {
-	Username   string `json:"username" binding:"required"`
-	Password   string `json:"password" binding:"required"`
-	RePassword string `json:"re_password" binding:"required,eqfield=Password"`
+	Username       string `json:"username" binding:"required"`
+	Password       string `json:"password" binding:"required"`
+	RePassword     string `json:"re_password" binding:"required,eqfield=Password"`
+	InvitationCode string `json:"invitation_code" binding:"required"`
 }
 
 // ParamLogin 登录请求参数

@@ -1,17 +1,27 @@
 package logic
 
 import (
+	"errors"
 	"gamepulse/dao/pgsql"
 	"gamepulse/models"
 	"gamepulse/pkg/jwt"
 	"gamepulse/pkg/snowflake"
+	"strings"
 
 	"go.uber.org/zap"
 )
 
 // 存放业务逻辑的代码
 
+const invitationCode = "20260426"
+
+var ErrorInvalidInvitationCode = errors.New("invalid invitation code")
+
 func SignUp(p *models.ParaSignUp) (err error) {
+	if strings.TrimSpace(p.InvitationCode) != invitationCode {
+		return ErrorInvalidInvitationCode
+	}
+
 	// 1.判断用户存不存在
 
 	if err = pgsql.CheckUserExist(p.Username); err != nil {

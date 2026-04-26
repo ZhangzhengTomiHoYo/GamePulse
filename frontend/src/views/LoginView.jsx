@@ -7,7 +7,8 @@ import { useToast } from '../components/ToastProvider.jsx'
 const initialForm = {
   username: '',
   password: '',
-  re_password: ''
+  re_password: '',
+  invitation_code: ''
 }
 
 export default function LoginView() {
@@ -38,6 +39,11 @@ export default function LoginView() {
 
     if (!isLogin && form.password !== form.re_password) {
       toast.error('两次输入的密码不一致')
+      return
+    }
+
+    if (!isLogin && !form.invitation_code) {
+      toast.warning('请输入邀请码')
       return
     }
 
@@ -114,16 +120,30 @@ export default function LoginView() {
           </label>
 
           {!isLogin && (
-            <label className="field-block">
-              <span>确认密码</span>
-              <input
-                value={form.re_password}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="请再次输入密码"
-                autoComplete="new-password"
-                onChange={(event) => updateField('re_password', event.target.value)}
-              />
-            </label>
+            <>
+              <label className="field-block">
+                <span>确认密码</span>
+                <input
+                  value={form.re_password}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="请再次输入密码"
+                  autoComplete="new-password"
+                  onChange={(event) => updateField('re_password', event.target.value)}
+                />
+              </label>
+
+              <label className="field-block">
+                <span>邀请码</span>
+                <input
+                  value={form.invitation_code}
+                  type="text"
+                  placeholder="请输入邀请码"
+                  autoComplete="off"
+                  inputMode="numeric"
+                  onChange={(event) => updateField('invitation_code', event.target.value)}
+                />
+              </label>
+            </>
           )}
 
           <button className="primary-action submit-btn" type="submit" disabled={submitting}>
