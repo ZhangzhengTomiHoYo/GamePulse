@@ -25,8 +25,7 @@ func UploadFile(objectName string, reader io.Reader, objectSize int64, contentTy
 	if useSSL {
 		protocol = "https"
 	}
-	// 拼接规则：http://127.0.0.1:9000/gamepulse-images/123456.jpg
-	imageURL := fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, bucketName, objectName)
+	imageURL := fmt.Sprintf("%s://%s/%s/%s", protocol, publicEndpoint, bucketName, objectName)
 
 	return imageURL, nil
 }
