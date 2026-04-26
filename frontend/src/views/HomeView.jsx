@@ -230,14 +230,14 @@ export default function HomeView() {
         <section className="content-middle">
           <div className="feed-tabs">
             <button
-              className={sortBy === 'score' ? 'is-active' : ''}
+              className={`feed-tab ${sortBy === 'score' ? 'active is-active' : ''}`}
               type="button"
               onClick={() => handleSortChange('score')}
             >
               热门
             </button>
             <button
-              className={sortBy === 'time' ? 'is-active' : ''}
+              className={`feed-tab ${sortBy === 'time' ? 'active is-active' : ''}`}
               type="button"
               onClick={() => handleSortChange('time')}
             >

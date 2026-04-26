@@ -3,6 +3,7 @@ import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/ToastProvider.jsx'
+import logoImg from '../assets/gamepulse.png'
 
 const initialForm = {
   username: '',
@@ -82,7 +83,7 @@ export default function LoginView() {
     <main className="login-container">
       <section className="auth-card">
         <div className="auth-header">
-          <div className="auth-mark">GP</div>
+          <img src={logoImg} alt="GamePulse" className="auth-mark" />
           <h1>GamePulse 社区</h1>
           <p>{isLogin ? '账号登录' : '注册新账号'}</p>
         </div>
