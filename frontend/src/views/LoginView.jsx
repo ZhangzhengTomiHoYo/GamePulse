@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useToast } from '../components/ToastProvider.jsx'
 import logoImg from '../assets/gamepulse.png'
 
@@ -12,11 +12,15 @@ const initialForm = {
   invitation_code: ''
 }
 
-export default function LoginView() {
+export default function LoginView({ initialMode = 'login' }) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const toast = useToast()
-  const [isLogin, setIsLogin] = useState(true)
-  const [form, setForm] = useState(initialForm)
+  const [isLogin, setIsLogin] = useState(initialMode !== 'signup')
+  const [form, setForm] = useState(() => ({
+    ...initialForm,
+    invitation_code: searchParams.get('invitation_code') || ''
+  }))
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 

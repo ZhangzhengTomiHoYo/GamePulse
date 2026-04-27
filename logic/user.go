@@ -13,12 +13,15 @@ import (
 
 // 存放业务逻辑的代码
 
-const invitationCode = "20260426"
+var invitationCodes = map[string]struct{}{
+	"20260426": {},
+	"HR2026":   {},
+}
 
 var ErrorInvalidInvitationCode = errors.New("invalid invitation code")
 
 func SignUp(p *models.ParaSignUp) (err error) {
-	if strings.TrimSpace(p.InvitationCode) != invitationCode {
+	if _, ok := invitationCodes[strings.TrimSpace(p.InvitationCode)]; !ok {
 		return ErrorInvalidInvitationCode
 	}
 

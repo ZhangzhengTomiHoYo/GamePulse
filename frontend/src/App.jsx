@@ -10,6 +10,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomeView />} />
       <Route path="/login" element={<LoginView />} />
+      <Route path="/signup" element={<LoginView initialMode="signup" />} />
       <Route path="/post/create" element={<CreatePostView />} />
       <Route path="/agent/community" element={<CommunityAgentView />} />
       <Route path="/post/:id" element={<PostDetailView />} />
