@@ -27,7 +27,8 @@ func Init(cfg *setting.MinIOConfig) error {
 		publicEndpoint = endpoint
 	}
 	bucketName = cfg.BucketName
-	useSSL = cfg.UseSSL
+	// 初始化 minio 客户端连接永远是http
+	useSSL = false
 
 	// 1. 建立连接
 	client, err = minio.New(endpoint, &minio.Options{
