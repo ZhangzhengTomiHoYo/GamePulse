@@ -27,13 +27,13 @@ func Init(cfg *setting.MinIOConfig) error {
 		publicEndpoint = endpoint
 	}
 	bucketName = cfg.BucketName
-	// 初始化 minio 客户端连接永远是http
-	useSSL = false
+
+	useSSL = cfg.UseSSL
 
 	// 1. 建立连接
 	client, err = minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
-		Secure: useSSL,
+		Secure: false, // 初始化 minio 客户端连接永远是http
 	})
 	if err != nil {
 		return fmt.Errorf("minio connect failed: %w", err)
